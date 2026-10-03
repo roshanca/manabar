@@ -6,6 +6,9 @@ enum KeychainHelper {
     static let devinService = "com.roshan.manabar.devin"
     static let devinAccount = "api-key"
 
+    static let kimiWebService = "com.roshan.manabar.kimi-web"
+    static let kimiWebAccount = "session"
+
     static func read(service: String, account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

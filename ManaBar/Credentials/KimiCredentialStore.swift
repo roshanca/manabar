@@ -28,6 +28,8 @@ actor KimiCredentialStore {
 
         var authHost: String { self == .mainland ? "auth.kimi.com" : "auth.kimi.ai" }
         var apiHost: String { self == .mainland ? "api.kimi.com" : "api.kimi.ai" }
+        /// kimi.com web app host; authHost also serves the web session gateway.
+        var webHost: String { self == .mainland ? "www.kimi.com" : "www.kimi.ai" }
     }
 
     private static let clientID = "17e5f671-d194-4dfb-9706-5516cb48c098"

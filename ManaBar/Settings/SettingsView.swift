@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @State private var devinAPIKey = ""
+    @State private var kimiWebToken = ""
 
     private var settings: AppSettings { appState.settings }
 
@@ -43,6 +44,39 @@ struct SettingsView: View {
                 Toggle(#""Out of mana" alert when critical"#, isOn: outOfManaBinding)
             }
 
+            Section("Kimi web session") {
+                SecureField("refresh_token", text: $kimiWebToken)
+                    .textFieldStyle(.roundedBorder)
+                HStack {
+                    Button("Save") {
+                        let trimmed = kimiWebToken.trimmingCharacters(in: .whitespacesAndNewlines)
+                        Task {
+                            if trimmed.isEmpty {
+                                await KimiWebCredentialStore.shared.clear()
+                            } else {
+                                await KimiWebCredentialStore.shared.importRefreshToken(trimmed)
+                            }
+                            kimiWebToken = ""
+                            await appState.refresh()
+                        }
+                    }
+                    .disabled(kimiWebToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                              && KeychainHelper.read(service: KeychainHelper.kimiWebService,
+                                                     account: KeychainHelper.kimiWebAccount) == nil)
+                    if KeychainHelper.read(service: KeychainHelper.kimiWebService,
+                                           account: KeychainHelper.kimiWebAccount) != nil {
+                        Label("Token saved", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                    }
+                }
+                Text("Shows the real booster recharge balance. Copy from kimi.com: "
+                     + "DevTools → Console → localStorage.getItem('refresh_token'). "
+                     + "Valid ~90 days.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Devin API key") {
                 SecureField("API key (stored in Keychain)", text: $devinAPIKey)
                     .textFieldStyle(.roundedBorder)
@@ -75,7 +109,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460, height: 460)
+        .frame(width: 460, height: 560)
     }
 
     // MARK: - Bindings (AppSettings is @Observable; explicit bindings keep didSet persistence)
