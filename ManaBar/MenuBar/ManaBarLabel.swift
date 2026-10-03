@@ -4,24 +4,31 @@ import SwiftUI
 /// The menu-bar mana bar. Rendered as a plain NSImage (deterministic in the
 /// menu bar, unlike arbitrary SwiftUI content). Fill ratio follows the primary
 /// provider's configured metric; >80% orange, >95% red + blinking with an
-/// optional "Out of mana" easter egg. The blink TimelineView only exists while
-/// critical, so idle costs zero timer wakeups.
+/// optional "Out of mana" easter egg. The blink task only runs while critical,
+/// so idle costs zero timer wakeups.
+///
+/// NOTE: do not use TimelineView or live Text(.timer) here — self-invalidating
+/// views in a MenuBarExtra label trigger an update/layout feedback loop
+/// (100% CPU, unbounded memory; FB22359008). Manual @State updates are safe.
 struct ManaBarLabel: View {
     @Environment(AppState.self) private var appState
+    @State private var blinkPhase = false
 
     private var ratio: Double? { appState.menuBarRatio }
-    private var isCritical: Bool { (ratio ?? 0) > 0.95 }
+    private var isCritical: Bool {
+        (ratio ?? 0) > 0.95 || UserDefaults.standard.bool(forKey: "debugForceCritical")
+    }
 
     var body: some View {
-        if isCritical {
-            TimelineView(.periodic(from: .now, by: 0.6)) { context in
-                let phase = context.date.timeIntervalSince1970.truncatingRemainder(dividingBy: 1.2)
-                image
-                    .opacity(phase < 0.6 ? 1 : 0.3)
+        image
+            .opacity(isCritical && blinkPhase ? 0.3 : 1)
+            .task(id: isCritical) {
+                blinkPhase = false
+                while isCritical && !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(0.6))
+                    blinkPhase.toggle()
+                }
             }
-        } else {
-            image
-        }
     }
 
     private var image: some View {
