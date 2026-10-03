@@ -44,7 +44,11 @@ enum ManaBarImage {
 
     static func make(ratio: Double?, outOfMana: Bool) -> NSImage {
         let text = outOfMana ? "  Out of mana" : ""
-        let textWidth: CGFloat = outOfMana ? 62 : 0
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10, weight: .bold),
+            .foregroundColor: NSColor.systemRed,
+        ]
+        let textWidth = outOfMana ? ceil(text.size(withAttributes: attributes).width) : 0
         let size = NSSize(width: barSize.width + textWidth + 2, height: imageHeight)
         let image = NSImage(size: size, flipped: false) { _ in
             let barOrigin = NSPoint(x: 1, y: (imageHeight - barSize.height) / 2)
@@ -68,10 +72,6 @@ enum ManaBarImage {
             }
 
             if outOfMana {
-                let attributes: [NSAttributedString.Key: Any] = [
-                    .font: NSFont.systemFont(ofSize: 10, weight: .bold),
-                    .foregroundColor: NSColor.systemRed,
-                ]
                 text.draw(at: NSPoint(x: barRect.maxX + 2, y: 3), withAttributes: attributes)
             }
             return true
