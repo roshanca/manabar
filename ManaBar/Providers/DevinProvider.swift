@@ -17,7 +17,6 @@ private let discoveryLogger = Logger(subsystem: "com.roshan.manabar", category: 
 /// Credential discovery order:
 /// 1. ~/.local/share/devin/credentials.toml (windsurf_api_key, api_server_url)
 /// 2. Devin's VS Code state DB (read-only sqlite3 query)
-/// 3. API key entered in Settings (stored in ManaBar's own keychain item)
 struct DevinProvider: UsageProvider {
     let id = ProviderID.devin
 
@@ -64,6 +63,8 @@ struct DevinProvider: UsageProvider {
     struct Credentials: Sendable {
         let apiKey: String
         let serverURL: String
+        /// Human-readable name of the source the key was discovered from (Settings UI).
+        let sourceLabel: String
     }
 
     func fetchUsage() async throws -> ProviderSnapshot {
@@ -139,7 +140,8 @@ struct DevinProvider: UsageProvider {
             if let key = values["windsurf_api_key"], !key.isEmpty {
                 return Credentials(
                     apiKey: key,
-                    serverURL: values["api_server_url"].flatMap { $0.isEmpty ? nil : $0 } ?? defaultServer)
+                    serverURL: values["api_server_url"].flatMap { $0.isEmpty ? nil : $0 } ?? defaultServer,
+                    sourceLabel: "credentials.toml")
             }
         }
 
@@ -156,18 +158,13 @@ struct DevinProvider: UsageProvider {
                let data = json.data(using: .utf8),
                let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let key = object["apiKey"] as? String, !key.isEmpty {
-                return Credentials(apiKey: key, serverURL: defaultServer)
+                return Credentials(apiKey: key, serverURL: defaultServer,
+                                   sourceLabel: "Devin Desktop sign-in")
             }
             discoveryLogger.info("sqlite output did not yield apiKey")
         }
 
-        if let key = KeychainHelper.read(
-            service: KeychainHelper.devinService, account: KeychainHelper.devinAccount),
-           !key.isEmpty {
-            return Credentials(apiKey: key, serverURL: defaultServer)
-        }
-
-        throw ProviderFailure.notConfigured("Devin API key not found — add one in Settings.")
+        throw ProviderFailure.notConfigured("Devin credentials not found — sign in to Devin Desktop or run `devin auth login`.")
     }
 
     /// Minimal flat `key = "value"` TOML scan — sufficient for credentials.toml.

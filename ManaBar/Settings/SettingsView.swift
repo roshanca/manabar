@@ -3,7 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
-    @State private var devinAPIKey = ""
+    @State private var devinCredentialSource = "Detecting…"
     @State private var kimiWebToken = ""
 
     private var settings: AppSettings { appState.settings }
@@ -77,39 +77,22 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Devin API key") {
-                SecureField("API key (stored in Keychain)", text: $devinAPIKey)
-                    .textFieldStyle(.roundedBorder)
-                HStack {
-                    Button("Save") {
-                        let trimmed = devinAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if trimmed.isEmpty {
-                            KeychainHelper.delete(
-                                service: KeychainHelper.devinService,
-                                account: KeychainHelper.devinAccount)
-                        } else {
-                            KeychainHelper.save(
-                                service: KeychainHelper.devinService,
-                                account: KeychainHelper.devinAccount,
-                                value: trimmed)
-                        }
-                        devinAPIKey = ""
-                        Task { await appState.refresh() }
-                    }
-                    .disabled(devinAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                              && KeychainHelper.read(service: KeychainHelper.devinService,
-                                                     account: KeychainHelper.devinAccount) == nil)
-                    if KeychainHelper.read(service: KeychainHelper.devinService,
-                                           account: KeychainHelper.devinAccount) != nil {
-                        Label("Key saved", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .font(.caption)
-                    }
-                }
+            Section("Devin") {
+                LabeledContent("Credential", value: devinCredentialSource)
+                Text("Detected automatically from the Devin Desktop sign-in "
+                     + "or devin CLI (~/.local/share/devin/credentials.toml).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 560)
+        .task {
+            let source = await Task.detached {
+                (try? DevinProvider.discoverCredentials())?.sourceLabel ?? "Not detected"
+            }.value
+            devinCredentialSource = source
+        }
     }
 
     // MARK: - Bindings (AppSettings is @Observable; explicit bindings keep didSet persistence)

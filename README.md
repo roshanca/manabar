@@ -29,11 +29,11 @@ make run                # 构建并启动
 | Kimi | `~/.kimi-code/credentials/kimi-code.json`（kimi CLI 登录后自动获得） |
 | Claude Code | macOS Keychain `Claude Code-credentials`（首次读取会弹系统授权框，属正常） |
 | Codex | `~/.codex/auth.json`（需 ChatGPT 登录方式，纯 API key 无用量数据） |
-| Devin | 自动发现 `~/.local/share/devin/credentials.toml` / Devin 编辑器状态库；或在设置页手填 API key（存入 Keychain） |
+| Devin | 自动发现 `~/.local/share/devin/credentials.toml` / Devin 编辑器状态库；设置页只读显示命中的来源 |
 
 ## 设置
 
-启用服务商、每家的菜单栏指标（5h/weekly）、菜单栏显示哪家、刷新间隔（1/5/15/30/60 分钟 + 手动）、剩余/已用切换、登录启动、Devin API key。
+启用服务商、每家的菜单栏指标（5h/weekly）、菜单栏显示哪家、刷新间隔（1/5/15/30/60 分钟 + 手动）、剩余/已用切换、登录启动、Devin 凭证来源显示。
 
 ## 署名
 
