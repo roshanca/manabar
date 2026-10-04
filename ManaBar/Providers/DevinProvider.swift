@@ -1,13 +1,18 @@
 import Foundation
+import OSLog
+
+private let discoveryLogger = Logger(subsystem: "com.roshan.manabar", category: "devin-credentials")
 
 /// Devin quota via Connect RPC GetUserStatus.
 ///
 /// Contract (adapted from burakgon/ai-usage-menubar / OpenUsage, MIT — see NOTICE):
 /// - POST {server}/exa.seat_management_pb.SeatManagementService/GetUserStatus,
-///   Connect-Protocol-Version: 1, apiKey in the JSON body (no Authorization header)
+///   Connect-Protocol-Version: 1, apiKey plus ideName/ideVersion/extensionName/
+///   extensionVersion/locale in the JSON body's `metadata` (server rejects a
+///   bare apiKey with HTTP 400; no Authorization header)
 /// - response: userStatus.planStatus carries daily/weekly REMAINING percents
 ///   (converted here with 100 - x) and Unix reset timestamps;
-///   planInfo.hideDailyQuota hides the daily window
+///   planStatus.planInfo.hideDailyQuota hides the daily window
 ///
 /// Credential discovery order:
 /// 1. ~/.local/share/devin/credentials.toml (windsurf_api_key, api_server_url)
@@ -21,18 +26,37 @@ struct DevinProvider: UsageProvider {
 
     private struct Response: Decodable {
         struct UserStatus: Decodable {
-            struct PlanStatus: Decodable {
-                let dailyQuotaRemainingPercent: Double?
-                let weeklyQuotaRemainingPercent: Double?
-                let dailyQuotaResetAtUnix: TimeInterval?
-                let weeklyQuotaResetAtUnix: TimeInterval?
+            /// proto3 JSON emits int64 as strings ("1791187200") but doubles as
+            /// numbers — accept both.
+            struct FlexibleDouble: Decodable {
+                let value: Double
+                init(from decoder: Decoder) throws {
+                    let container = try decoder.singleValueContainer()
+                    if let double = try? container.decode(Double.self) {
+                        value = double
+                    } else if let string = try? container.decode(String.self),
+                              let double = Double(string) {
+                        value = double
+                    } else {
+                        throw DecodingError.typeMismatch(
+                            Double.self,
+                            .init(codingPath: decoder.codingPath,
+                                  debugDescription: "Expected number or numeric string"))
+                    }
+                }
             }
-            struct PlanInfo: Decodable {
-                let hideDailyQuota: Bool?
-                let planName: String?
+            struct PlanStatus: Decodable {
+                struct PlanInfo: Decodable {
+                    let hideDailyQuota: Bool?
+                    let planName: String?
+                }
+                let dailyQuotaRemainingPercent: FlexibleDouble?
+                let weeklyQuotaRemainingPercent: FlexibleDouble?
+                let dailyQuotaResetAtUnix: FlexibleDouble?
+                let weeklyQuotaResetAtUnix: FlexibleDouble?
+                let planInfo: PlanInfo?
             }
             let planStatus: PlanStatus?
-            let planInfo: PlanInfo?
         }
         let userStatus: UserStatus?
     }
@@ -49,7 +73,14 @@ struct DevinProvider: UsageProvider {
                 throw ProviderFailure.transient("Invalid Devin server URL.")
             }
             var request = try URLRequest.jsonPOST(url, body: [
-                "metadata": ["apiKey": credentials.apiKey],
+                "metadata": [
+                    "apiKey": credentials.apiKey,
+                    "ideName": "devin",
+                    "ideVersion": "1.108.2",
+                    "extensionName": "devin",
+                    "extensionVersion": "1.108.2",
+                    "locale": "en",
+                ],
             ])
             request.setValue("1", forHTTPHeaderField: "Connect-Protocol-Version")
 
@@ -59,29 +90,29 @@ struct DevinProvider: UsageProvider {
             guard let planStatus = response.userStatus?.planStatus else {
                 throw ProviderFailure.transient("Devin quota data is unavailable.")
             }
-            let hideDaily = response.userStatus?.planInfo?.hideDailyQuota == true
+            let hideDaily = response.userStatus?.planStatus?.planInfo?.hideDailyQuota == true
 
             var metrics: [QuotaMetric] = []
-            if let remaining = planStatus.weeklyQuotaRemainingPercent {
+            if let remaining = planStatus.weeklyQuotaRemainingPercent?.value {
                 metrics.append(QuotaMetric(
                     id: "devin.weekly", kind: .weekly, title: "Weekly limit",
                     usedRatio: min(max((100 - remaining) / 100, 0), 1),
-                    resetDate: DateParsing.parse(epochSeconds: planStatus.weeklyQuotaResetAtUnix)))
+                    resetDate: DateParsing.parse(epochSeconds: planStatus.weeklyQuotaResetAtUnix?.value)))
             }
-            if let remaining = planStatus.dailyQuotaRemainingPercent {
+            if let remaining = planStatus.dailyQuotaRemainingPercent?.value {
                 if hideDaily {
                     // Republish the daily value as the weekly window (reference behavior).
                     if metrics.isEmpty {
                         metrics.append(QuotaMetric(
                             id: "devin.weekly", kind: .weekly, title: "Weekly limit",
                             usedRatio: min(max((100 - remaining) / 100, 0), 1),
-                            resetDate: DateParsing.parse(epochSeconds: planStatus.weeklyQuotaResetAtUnix)))
+                            resetDate: DateParsing.parse(epochSeconds: planStatus.dailyQuotaResetAtUnix?.value)))
                     }
                 } else {
                     metrics.insert(QuotaMetric(
                         id: "devin.daily", kind: .session, title: "Daily limit",
                         usedRatio: min(max((100 - remaining) / 100, 0), 1),
-                        resetDate: DateParsing.parse(epochSeconds: planStatus.dailyQuotaResetAtUnix)), at: 0)
+                        resetDate: DateParsing.parse(epochSeconds: planStatus.dailyQuotaResetAtUnix?.value)), at: 0)
                 }
             }
             guard !metrics.isEmpty else {
@@ -90,7 +121,7 @@ struct DevinProvider: UsageProvider {
 
             return ProviderSnapshot(
                 providerID: id,
-                planName: response.userStatus?.planInfo?.planName,
+                planName: response.userStatus?.planStatus?.planInfo?.planName,
                 metrics: metrics, extras: [], fetchedAt: Date())
         } catch {
             throw mapError(error, provider: id.displayName)
@@ -113,14 +144,21 @@ struct DevinProvider: UsageProvider {
         }
 
         let stateDB = home.appending(path: "Library/Application Support/Devin/User/globalStorage/state.vscdb")
-        if FileManager.default.fileExists(atPath: stateDB.path()),
-           let json = SecurityCLI.sqliteReadOnly(
-               database: stateDB.path(),
-               query: "SELECT value FROM ItemTable WHERE key = 'windsurfAuthStatus' LIMIT 1"),
-           let data = json.data(using: .utf8),
-           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let key = object["apiKey"] as? String, !key.isEmpty {
-            return Credentials(apiKey: key, serverURL: defaultServer)
+        let dbPath = stateDB.path(percentEncoded: false)
+        let dbExists = FileManager.default.fileExists(atPath: dbPath)
+        discoveryLogger.info("state.vscdb exists=\(dbExists)")
+        if dbExists {
+            let json = SecurityCLI.sqliteReadOnly(
+                database: dbPath,
+                query: "SELECT value FROM ItemTable WHERE key = 'windsurfAuthStatus' LIMIT 1")
+            discoveryLogger.info("sqlite result: \(json == nil ? "nil" : "\(json!.count) chars")")
+            if let json,
+               let data = json.data(using: .utf8),
+               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let key = object["apiKey"] as? String, !key.isEmpty {
+                return Credentials(apiKey: key, serverURL: defaultServer)
+            }
+            discoveryLogger.info("sqlite output did not yield apiKey")
         }
 
         if let key = KeychainHelper.read(

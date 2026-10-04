@@ -42,7 +42,10 @@ enum SecurityCLI {
         let stderr = Pipe()
         process.standardOutput = stdout
         process.standardError = stderr
-        do { try process.run() } catch { return nil }
+        do { try process.run() } catch {
+            SecurityCLILogger.log(path: path, status: -1, message: "spawn failed: \(error.localizedDescription)")
+            return nil
+        }
         let data = stdout.fileHandleForReading.readDataToEndOfFile()
         let errorData = stderr.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
