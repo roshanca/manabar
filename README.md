@@ -17,7 +17,8 @@ macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用�
 ```bash
 brew install xcodegen   # 一次性
 make build              # xcodegen + xcodebuild
-make run                # 构建并启动
+make install            # 构建并替换 /Applications/ManaBar.app
+make run                # 安装并启动
 ```
 
 或直接 `xcodegen && open ManaBar.xcodeproj` 在 Xcode 里运行。要求 macOS 26+ / Xcode 27+。
