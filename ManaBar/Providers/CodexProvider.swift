@@ -8,6 +8,10 @@ import Foundation
 ///   limit_window_seconds (18000 = 5h session, 604800 = weekly), reset_at (epoch s)
 /// - plan_type: "pro" → Pro 20x, "prolite" → Pro 5x
 /// - credits.balance floored to whole credits ($0.04 each)
+/// - rate_limit_reset_credits.available_count: banked "usage limit reset" credits;
+///   applicable_available_count is the subset redeemable right now (absent → all).
+///   When the count is non-zero, GET wham/rate-limit-reset-credits lists each
+///   credit's expires_at so we can show the earliest expiry.
 struct CodexProvider: UsageProvider {
     let id = ProviderID.codex
 
@@ -20,6 +24,10 @@ struct CodexProvider: UsageProvider {
         struct RateLimit: Decodable {
             let primaryWindow: Window?
             let secondaryWindow: Window?
+        }
+        struct ResetCredits: Decodable {
+            let availableCount: Int?
+            let applicableAvailableCount: Int?
         }
         struct Credits: Decodable {
             let balance: Double?
@@ -41,6 +49,16 @@ struct CodexProvider: UsageProvider {
         let rateLimit: RateLimit?
         let planType: String?
         let credits: Credits?
+        let rateLimitResetCredits: ResetCredits?
+    }
+
+    /// GET wham/rate-limit-reset-credits — the per-credit detail list.
+    private struct ResetCreditsResponse: Decodable {
+        struct Credit: Decodable {
+            let status: String?
+            let expiresAt: String?
+        }
+        let credits: [Credit]?
     }
 
     func fetchUsage() async throws -> ProviderSnapshot {
@@ -58,13 +76,7 @@ struct CodexProvider: UsageProvider {
         guard let url = URL(string: "https://chatgpt.com/backend-api/wham/usage") else {
             throw ProviderFailure.transient("Invalid Codex usage URL.")
         }
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(tokens.accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("ManaBar/1.0", forHTTPHeaderField: "User-Agent")
-        if let accountID = tokens.accountId, !accountID.isEmpty {
-            request.setValue(accountID, forHTTPHeaderField: "ChatGPT-Account-Id")
-        }
+        let request = authorizedRequest(url: url, tokens: tokens)
 
         let (data, _) = try await HTTPClient.shared.send(request)
         let decoder = JSONDecoder()
@@ -93,11 +105,51 @@ struct CodexProvider: UsageProvider {
                 id: "codex.credits", label: "Flex credits",
                 value: String(format: "%.0f (≈$%.2f)", whole, whole * 0.04)))
         }
+        if let resets = response.rateLimitResetCredits,
+           let available = resets.availableCount, available > 0 {
+            var value = "\(available)"
+            if let applicable = resets.applicableAvailableCount, applicable > 0 {
+                value += " · \(applicable) usable"
+            }
+            if let expiry = await nextResetExpiry(tokens: tokens) {
+                value += " · exp \(expiry.formatted(.dateTime.month(.abbreviated).day()))"
+            }
+            extras.append(ExtraInfo(id: "codex.resets", label: "Limit resets", value: value))
+        }
 
         return ProviderSnapshot(
             providerID: id,
             planName: Self.planName(response.planType),
             metrics: metrics, extras: extras, fetchedAt: Date())
+    }
+
+    private func authorizedRequest(url: URL, tokens: CodexCredentialStore.Tokens) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(tokens.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("ManaBar/1.0", forHTTPHeaderField: "User-Agent")
+        if let accountID = tokens.accountId, !accountID.isEmpty {
+            request.setValue(accountID, forHTTPHeaderField: "ChatGPT-Account-Id")
+        }
+        return request
+    }
+
+    /// Earliest expiry among redeemable reset credits; nil when the detail
+    /// endpoint fails or lists none — the banked count is still shown.
+    private func nextResetExpiry(tokens: CodexCredentialStore.Tokens) async -> Date? {
+        guard let url = URL(string: "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits") else {
+            return nil
+        }
+        guard let (data, _) = try? await HTTPClient.shared.send(authorizedRequest(url: url, tokens: tokens)) else {
+            return nil
+        }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        guard let detail = try? decoder.decode(ResetCreditsResponse.self, from: data) else { return nil }
+        return (detail.credits ?? [])
+            .filter { $0.status == "available" }
+            .compactMap { $0.expiresAt.flatMap(DateParsing.parse) }
+            .min()
     }
 
     private static func planName(_ planType: String?) -> String? {

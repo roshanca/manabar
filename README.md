@@ -8,7 +8,7 @@ macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用�
 
 - 菜单栏魔法条：填充 = 选定服务商的配额消耗，>80% 变橙，>95% 变红闪烁（可配 "Out of mana" 彩蛋）
 - Popover 面板按服务商分卡片：5h / weekly 限额、重置倒计时、套餐名
-- Kimi 卡片附 booster 余额与本月加油包消费；Claude 附 extra usage；Codex 附 flex credits
+- Kimi 卡片附 booster 余额与本月加油包消费；Claude 附 extra usage；Codex 附 flex credits 与 usage-limit reset 券（数量/可用数/最早到期）
 - 失败保留上次数据并标记 stale；刷新间隙零 CPU
 - 凭证只读本机文件 / Keychain，绝不外传；token 刷新后原子写回（与 CLI 并发安全）
 
@@ -17,7 +17,8 @@ macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用�
 ```bash
 brew install xcodegen   # 一次性
 make build              # xcodegen + xcodebuild
-make run                # 构建并启动
+make install            # 构建并替换 /Applications/ManaBar.app
+make run                # 安装并启动
 ```
 
 或直接 `xcodegen && open ManaBar.xcodeproj` 在 Xcode 里运行。要求 macOS 26+ / Xcode 27+。
