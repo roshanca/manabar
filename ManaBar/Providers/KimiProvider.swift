@@ -127,12 +127,14 @@ struct KimiProvider: UsageProvider {
         if let window = response.usages?.limit5h, let ratio = window.usedRatio {
             metrics.append(QuotaMetric(
                 id: "kimi.5h", kind: .session, title: "5h limit",
-                usedRatio: ratio, resetDate: window.resetTime.flatMap(DateParsing.parse)))
+                usedRatio: ratio, resetDate: window.resetTime.flatMap(DateParsing.parse),
+                windowSeconds: MetricKind.session.defaultWindowSeconds))
         }
         if let window = response.usages?.limit7d, let ratio = window.usedRatio {
             metrics.append(QuotaMetric(
                 id: "kimi.7d", kind: .weekly, title: "Weekly limit",
-                usedRatio: ratio, resetDate: window.resetTime.flatMap(DateParsing.parse)))
+                usedRatio: ratio, resetDate: window.resetTime.flatMap(DateParsing.parse),
+                windowSeconds: MetricKind.weekly.defaultWindowSeconds))
         }
         guard !metrics.isEmpty else {
             throw ProviderFailure.transient("Kimi usage response had no quota windows.")
@@ -219,7 +221,8 @@ struct KimiProvider: UsageProvider {
             stats.metrics.append(QuotaMetric(
                 id: "kimi.subscription", kind: nil, title: "Subscription",
                 usedRatio: ratio,
-                resetDate: subscription.expireTime.flatMap(DateParsing.parse)))
+                resetDate: subscription.expireTime.flatMap(DateParsing.parse),
+                windowSeconds: nil))
         }
         return stats
     }

@@ -41,7 +41,8 @@ enum MetricKind: String, Codable, Sendable, CaseIterable, Identifiable {
         }
     }
 
-    /// Length of the quota window in seconds; basis for the pace tick.
+    /// Known length of the quota window in seconds — passed explicitly to
+    /// `QuotaMetric.windowSeconds` to place the pace tick.
     var defaultWindowSeconds: TimeInterval {
         switch self {
         case .session: 18_000
@@ -57,17 +58,19 @@ struct QuotaMetric: Sendable, Identifiable {
     /// 0...1, fraction of the quota already consumed.
     let usedRatio: Double
     let resetDate: Date?
-    /// Window length in seconds; combined with resetDate it places the pace tick.
+    /// Window length in seconds; window start is `resetDate − windowSeconds`.
+    /// Providers must pass it explicitly — pace math never assumes a calendar
+    /// day/week. nil means no pace tick or projection.
     let windowSeconds: TimeInterval?
 
     init(id: String, kind: MetricKind?, title: String, usedRatio: Double,
-         resetDate: Date?, windowSeconds: TimeInterval? = nil) {
+         resetDate: Date?, windowSeconds: TimeInterval?) {
         self.id = id
         self.kind = kind
         self.title = title
         self.usedRatio = usedRatio
         self.resetDate = resetDate
-        self.windowSeconds = windowSeconds ?? kind?.defaultWindowSeconds
+        self.windowSeconds = windowSeconds
     }
 }
 
