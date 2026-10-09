@@ -74,6 +74,16 @@ struct QuotaMetric: Sendable, Identifiable {
     }
 }
 
+/// One slot in the menu-bar image, ordered top → bottom. `metric` nil means
+/// no data for that window — the slot keeps an unfilled track (not the same
+/// as 0% used) and never counts toward the critical alert.
+struct MenuBarBar {
+    /// The window this slot represents — also labels the slot when `metric`
+    /// is nil so "no data" stays distinguishable.
+    let kind: MetricKind
+    let metric: QuotaMetric?
+}
+
 /// A free-form label/value row shown under a provider's metrics
 /// (Kimi booster balance, Claude extra usage, Codex credits, ...).
 struct ExtraInfo: Sendable, Identifiable {
