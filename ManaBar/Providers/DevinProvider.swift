@@ -53,6 +53,8 @@ struct DevinProvider: UsageProvider {
                 let weeklyQuotaRemainingPercent: FlexibleDouble?
                 let dailyQuotaResetAtUnix: FlexibleDouble?
                 let weeklyQuotaResetAtUnix: FlexibleDouble?
+                /// Extra usage balance, in USD micros (int64 as string) — "$2.58" = 2580763.
+                let overageBalanceMicros: FlexibleDouble?
                 let planInfo: PlanInfo?
             }
             let planStatus: PlanStatus?
@@ -98,7 +100,8 @@ struct DevinProvider: UsageProvider {
                 metrics.append(QuotaMetric(
                     id: "devin.weekly", kind: .weekly, title: "Weekly limit",
                     usedRatio: min(max((100 - remaining) / 100, 0), 1),
-                    resetDate: DateParsing.parse(epochSeconds: planStatus.weeklyQuotaResetAtUnix?.value)))
+                    resetDate: DateParsing.parse(epochSeconds: planStatus.weeklyQuotaResetAtUnix?.value),
+                    windowSeconds: 604_800))
             }
             if let remaining = planStatus.dailyQuotaRemainingPercent?.value {
                 if hideDaily {
@@ -107,23 +110,32 @@ struct DevinProvider: UsageProvider {
                         metrics.append(QuotaMetric(
                             id: "devin.weekly", kind: .weekly, title: "Weekly limit",
                             usedRatio: min(max((100 - remaining) / 100, 0), 1),
-                            resetDate: DateParsing.parse(epochSeconds: planStatus.dailyQuotaResetAtUnix?.value)))
+                            resetDate: DateParsing.parse(epochSeconds: planStatus.dailyQuotaResetAtUnix?.value),
+                            windowSeconds: 86_400))
                     }
                 } else {
                     metrics.insert(QuotaMetric(
                         id: "devin.daily", kind: .session, title: "Daily limit",
                         usedRatio: min(max((100 - remaining) / 100, 0), 1),
-                        resetDate: DateParsing.parse(epochSeconds: planStatus.dailyQuotaResetAtUnix?.value)), at: 0)
+                        resetDate: DateParsing.parse(epochSeconds: planStatus.dailyQuotaResetAtUnix?.value),
+                        windowSeconds: 86_400), at: 0)
                 }
             }
             guard !metrics.isEmpty else {
                 throw ProviderFailure.transient("Devin quota data is unavailable.")
             }
 
+            var extras: [ExtraInfo] = []
+            if let micros = planStatus.overageBalanceMicros?.value {
+                extras.append(ExtraInfo(
+                    id: "devin.overage", label: "Extra usage balance",
+                    value: String(format: "$%.2f remaining", micros / 1_000_000)))
+            }
+
             return ProviderSnapshot(
                 providerID: id,
                 planName: response.userStatus?.planStatus?.planInfo?.planName,
-                metrics: metrics, extras: [], fetchedAt: Date())
+                metrics: metrics, extras: extras, fetchedAt: Date())
         } catch {
             throw mapError(error, provider: id.displayName)
         }

@@ -16,6 +16,15 @@ enum ProviderID: String, CaseIterable, Codable, Sendable, Identifiable {
         case .devin: "Devin"
         }
     }
+
+    var iconAssetName: String {
+        switch self {
+        case .kimi: "ProviderKimi"
+        case .claudeCode: "ProviderClaude"
+        case .codex: "ProviderCodex"
+        case .devin: "ProviderDevin"
+        }
+    }
 }
 
 /// Which quota window a metric represents; used for menu-bar metric selection.
@@ -31,6 +40,14 @@ enum MetricKind: String, Codable, Sendable, CaseIterable, Identifiable {
         case .weekly: "Weekly"
         }
     }
+
+    /// Length of the quota window in seconds; basis for the pace tick.
+    var defaultWindowSeconds: TimeInterval {
+        switch self {
+        case .session: 18_000
+        case .weekly: 604_800
+        }
+    }
 }
 
 struct QuotaMetric: Sendable, Identifiable {
@@ -40,6 +57,18 @@ struct QuotaMetric: Sendable, Identifiable {
     /// 0...1, fraction of the quota already consumed.
     let usedRatio: Double
     let resetDate: Date?
+    /// Window length in seconds; combined with resetDate it places the pace tick.
+    let windowSeconds: TimeInterval?
+
+    init(id: String, kind: MetricKind?, title: String, usedRatio: Double,
+         resetDate: Date?, windowSeconds: TimeInterval? = nil) {
+        self.id = id
+        self.kind = kind
+        self.title = title
+        self.usedRatio = usedRatio
+        self.resetDate = resetDate
+        self.windowSeconds = windowSeconds ?? kind?.defaultWindowSeconds
+    }
 }
 
 /// A free-form label/value row shown under a provider's metrics

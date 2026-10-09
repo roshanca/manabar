@@ -29,8 +29,12 @@ struct ProviderCardView: View {
         let stale = appState.isStale(providerID)
         let failure = appState.failureMessage(providerID)
 
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
+                Image(providerID.iconAssetName)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .foregroundStyle(.primary)
                 Text(providerID.displayName)
                     .font(.headline)
                 if let plan = snapshot?.planName {
