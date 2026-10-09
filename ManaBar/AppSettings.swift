@@ -29,6 +29,28 @@ final class AppSettings {
         }
     }
 
+    /// How a provider's quota appears in the menu bar: one window, or both
+    /// stacked (short-period on top, weekly below). Raw values stay
+    /// compatible with the MetricKind strings persisted by older builds —
+    /// this is a display mode, not a quota window, so MetricKind stays
+    /// session/weekly only.
+    enum MenuBarDisplay: String, CaseIterable, Identifiable, Sendable {
+        case session
+        case weekly
+        case dual
+
+        var id: String { rawValue }
+
+        /// Per-provider option label — Devin's short window is daily, not 5h.
+        func label(for provider: ProviderID) -> String {
+            switch self {
+            case .session: provider == .devin ? "Daily / session" : "5h / session"
+            case .weekly: "Weekly"
+            case .dual: "Both"
+            }
+        }
+    }
+
     private let defaults = UserDefaults.standard
 
     var enabledProviders: Set<ProviderID> {
@@ -38,8 +60,9 @@ final class AppSettings {
     var primaryProvider: ProviderID {
         didSet { defaults.set(primaryProvider.rawValue, forKey: "primaryProvider") }
     }
-    /// Which window (session/weekly) each provider shows in the menu bar when primary.
-    var menuBarMetric: [ProviderID: MetricKind] {
+    /// Which display mode (session/weekly/dual) each provider uses in the
+    /// menu bar when primary.
+    var menuBarMetric: [ProviderID: MenuBarDisplay] {
         didSet { defaults.set(menuBarMetric.mapValues(\.rawValue), forKey: "menuBarMetric") }
     }
     var refreshInterval: RefreshInterval {
@@ -69,7 +92,7 @@ final class AppSettings {
         menuBarMetric = (defaults.dictionary(forKey: "menuBarMetric") as? [String: String])?
             .reduce(into: [:]) { result, pair in
                 guard let provider = ProviderID(rawValue: pair.key),
-                      let kind = MetricKind(rawValue: pair.value) else { return }
+                      let kind = MenuBarDisplay(rawValue: pair.value) else { return }
                 result[provider] = kind
             } ?? [:]
         if let rawInterval = defaults.object(forKey: "refreshInterval") as? Int,
@@ -85,11 +108,13 @@ final class AppSettings {
         outOfManaAlert = defaults.object(forKey: "outOfManaAlert") as? Bool ?? true
     }
 
-    func menuBarKind(for provider: ProviderID) -> MetricKind {
+    /// Unknown or missing persisted values fall back per provider to
+    /// `.session` without resetting other valid settings.
+    func menuBarDisplay(for provider: ProviderID) -> MenuBarDisplay {
         menuBarMetric[provider] ?? .session
     }
 
-    func setMenuBarKind(_ kind: MetricKind, for provider: ProviderID) {
-        menuBarMetric[provider] = kind
+    func setMenuBarDisplay(_ display: MenuBarDisplay, for provider: ProviderID) {
+        menuBarMetric[provider] = display
     }
 }

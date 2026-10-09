@@ -79,12 +79,28 @@ final class AppState {
 
     // MARK: - Menu bar state
 
-    /// Fill ratio for the mana bar: the configured metric of the primary provider.
-    var menuBarRatio: Double? {
-        guard let snapshot = snapshots[settings.primaryProvider] else { return nil }
-        let kind = settings.menuBarKind(for: settings.primaryProvider)
-        return snapshot.metrics.first(where: { $0.kind == kind })?.usedRatio
-            ?? snapshot.metrics.first?.usedRatio
+    /// Bar slots the mana bar draws for the primary provider, top → bottom.
+    /// Single-window modes keep the existing fallback to the first metric
+    /// when the configured window is absent; `.dual` resolves the session
+    /// and weekly windows independently — a missing window stays nil so its
+    /// track position never shifts and it never counts toward the alert.
+    var menuBarBars: [MenuBarBar] {
+        let display = settings.menuBarDisplay(for: settings.primaryProvider)
+        let snapshot = snapshots[settings.primaryProvider]
+        switch display {
+        case .session, .weekly:
+            let wanted: MetricKind = display == .session ? .session : .weekly
+            let metric = snapshot?.metrics.first(where: { $0.kind == wanted })
+                ?? snapshot?.metrics.first
+            return [MenuBarBar(kind: metric?.kind ?? wanted, metric: metric)]
+        case .dual:
+            return [
+                MenuBarBar(kind: .session,
+                           metric: snapshot?.metrics.first(where: { $0.kind == .session })),
+                MenuBarBar(kind: .weekly,
+                           metric: snapshot?.metrics.first(where: { $0.kind == .weekly })),
+            ]
+        }
     }
 
     func isStale(_ provider: ProviderID) -> Bool {

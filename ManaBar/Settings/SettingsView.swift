@@ -15,9 +15,9 @@ struct SettingsView: View {
                     HStack {
                         Toggle(provider.displayName, isOn: binding(for: provider))
                         Spacer()
-                        Picker("Menu bar", selection: metricBinding(for: provider)) {
-                            ForEach(MetricKind.allCases) { kind in
-                                Text(kind.label).tag(kind)
+                        Picker("Menu bar", selection: displayBinding(for: provider)) {
+                            ForEach(AppSettings.MenuBarDisplay.allCases) { display in
+                                Text(display.label(for: provider)).tag(display)
                             }
                         }
                         .labelsHidden()
@@ -26,6 +26,9 @@ struct SettingsView: View {
                         .disabled(!settings.enabledProviders.contains(provider))
                     }
                 }
+                Text(#""Both" draws two stacked bars: short-period quota on top, weekly quota below."#)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Picker("Menu bar shows", selection: primaryProviderBinding) {
                     ForEach(ProviderID.allCases) { provider in
                         Text(provider.displayName).tag(provider)
@@ -106,10 +109,10 @@ struct SettingsView: View {
             })
     }
 
-    private func metricBinding(for provider: ProviderID) -> Binding<MetricKind> {
+    private func displayBinding(for provider: ProviderID) -> Binding<AppSettings.MenuBarDisplay> {
         Binding(
-            get: { settings.menuBarKind(for: provider) },
-            set: { settings.setMenuBarKind($0, for: provider) })
+            get: { settings.menuBarDisplay(for: provider) },
+            set: { settings.setMenuBarDisplay($0, for: provider) })
     }
 
     private var primaryProviderBinding: Binding<ProviderID> {
