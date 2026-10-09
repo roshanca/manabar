@@ -102,7 +102,8 @@ struct ClaudeCodeProvider: UsageProvider {
             metrics.append(QuotaMetric(
                 id: metricID, kind: kind, title: title,
                 usedRatio: min(max(utilization / 100, 0), 1),
-                resetDate: window?.resetsAt.flatMap(DateParsing.parse)))
+                resetDate: window?.resetsAt.flatMap(DateParsing.parse),
+                windowSeconds: kind.defaultWindowSeconds))
         }
         append(response.fiveHour, id: "claude.5h", kind: .session, title: "5h limit")
         append(response.sevenDay, id: "claude.7d", kind: .weekly, title: "Weekly limit")
@@ -114,7 +115,8 @@ struct ClaudeCodeProvider: UsageProvider {
             metrics.append(QuotaMetric(
                 id: "claude.limit.\(name)", kind: .weekly, title: "\(name) weekly",
                 usedRatio: min(max(percent / 100, 0), 1),
-                resetDate: limit.resetsAt.flatMap(DateParsing.parse)))
+                resetDate: limit.resetsAt.flatMap(DateParsing.parse),
+                windowSeconds: MetricKind.weekly.defaultWindowSeconds))
         }
         guard !metrics.isEmpty else {
             throw ProviderFailure.transient("Claude usage response had no quota windows.")

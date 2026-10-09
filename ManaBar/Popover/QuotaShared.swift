@@ -6,13 +6,18 @@ enum RelativeReset {
         guard let date else { return "" }
         let interval = date.timeIntervalSince(now)
         if interval <= 0 { return "resetting now" }
+        return "resets in \(durationString(interval))"
+    }
+
+    /// "45m", "1h 50m", "3d 2h" — compact duration, floored to minutes.
+    static func durationString(_ interval: TimeInterval) -> String {
         let totalMinutes = Int(interval / 60)
         let days = totalMinutes / (60 * 24)
         let hours = (totalMinutes / 60) % 24
         let minutes = totalMinutes % 60
-        if days > 0 { return "resets in \(days)d \(hours)h" }
-        if hours > 0 { return "resets in \(hours)h \(minutes)m" }
-        return "resets in \(max(minutes, 1))m"
+        if days > 0 { return "\(days)d \(hours)h" }
+        if hours > 0 { return "\(hours)h \(minutes)m" }
+        return "\(max(minutes, 1))m"
     }
 }
 
@@ -28,7 +33,7 @@ enum QuotaColor {
 /// A mana-bar style progress bar. `paceRatio` (elapsed-time fraction of the
 /// quota window) draws a pace tick — a thin line with a small gap cut into
 /// the bar on either side, the convention OpenUsage and similar trackers
-/// use: red when the current burn rate overshoots the limit before reset,
+/// use: red when consumption runs ahead of pace beyond the ±5pp tolerance,
 /// neutral otherwise.
 struct QuotaBar: View {
     let usedRatio: Double
@@ -82,6 +87,9 @@ struct QuotaBar: View {
     }
 
     private func tickColor(pace: Double) -> Color {
-        pace > 0 && usedRatio / pace > 1 ? .red : .primary.opacity(0.6)
+        // Red on a deficit beyond ±5pp (usedRatio − pace > tolerance), not at
+        // the first drop past the marker — early-window reads are too noisy
+        // for a zero-tolerance warning.
+        usedRatio - pace > Pace.toleranceRatio ? .red : .primary.opacity(0.6)
     }
 }
