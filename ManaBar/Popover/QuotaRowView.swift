@@ -35,7 +35,7 @@ struct QuotaRowView: View {
                 HStack {
                     Text(pace.deltaText)
                         .font(.caption.monospacedDigit())
-                        .foregroundStyle(pace.status == .deficit ? Color.red : Color.secondary)
+                        .foregroundStyle(pace.status == .deficit ? Color.orange : Color.secondary)
                     Spacer()
                     Text(pace.runOutText(untilReset: metric.resetDate?.timeIntervalSince(now) ?? 0))
                         .font(.caption)

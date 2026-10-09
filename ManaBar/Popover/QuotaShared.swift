@@ -33,8 +33,8 @@ enum QuotaColor {
 /// A mana-bar style progress bar. `paceRatio` (elapsed-time fraction of the
 /// quota window) draws a pace tick — a thin line with a small gap cut into
 /// the bar on either side, the convention OpenUsage and similar trackers
-/// use: red when consumption runs ahead of pace beyond the ±5pp tolerance,
-/// neutral otherwise.
+/// use: orange when consumption runs ahead of pace beyond the ±5pp
+/// tolerance (warning, not yet critical), neutral otherwise.
 struct QuotaBar: View {
     let usedRatio: Double
     var paceRatio: Double? = nil
@@ -87,9 +87,10 @@ struct QuotaBar: View {
     }
 
     private func tickColor(pace: Double) -> Color {
-        // Red on a deficit beyond ±5pp (usedRatio − pace > tolerance), not at
-        // the first drop past the marker — early-window reads are too noisy
-        // for a zero-tolerance warning.
-        usedRatio - pace > Pace.toleranceRatio ? .red : .primary.opacity(0.6)
+        // Orange on a deficit beyond ±5pp (usedRatio − pace > tolerance), not
+        // at the first drop past the marker — early-window reads are too
+        // noisy for a zero-tolerance warning. Full red stays reserved for
+        // >95% used (QuotaColor).
+        usedRatio - pace > Pace.toleranceRatio ? .orange : .primary.opacity(0.6)
     }
 }
