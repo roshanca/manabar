@@ -25,20 +25,63 @@ enum QuotaColor {
     }
 }
 
-/// A mana-bar style progress bar.
+/// A mana-bar style progress bar. `paceRatio` (elapsed-time fraction of the
+/// quota window) draws a pace tick — a thin line with a small gap cut into
+/// the bar on either side, the convention OpenUsage and similar trackers
+/// use: red when the current burn rate overshoots the limit before reset,
+/// neutral otherwise.
 struct QuotaBar: View {
     let usedRatio: Double
+    var paceRatio: Double? = nil
     var height: CGFloat = 8
+
+    private let lineWidth: CGFloat = 2
+    private let lineGap: CGFloat = 1.5
 
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                Capsule().fill(.primary.opacity(0.12))
-                Capsule()
-                    .fill(QuotaColor.color(for: usedRatio))
-                    .frame(width: max(height, geometry.size.width * min(max(usedRatio, 0), 1)))
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.primary.opacity(0.12))
+                    Capsule()
+                        .fill(QuotaColor.color(for: usedRatio))
+                        .frame(width: max(height, geometry.size.width * min(max(usedRatio, 0), 1)))
+                }
+                .mask { barMask(width: geometry.size.width) }
+
+                if let paceRatio {
+                    Capsule()
+                        .fill(tickColor(pace: paceRatio))
+                        .frame(width: lineWidth, height: height)
+                        .offset(x: tickX(width: geometry.size.width, pace: paceRatio) - lineWidth / 2)
+                }
             }
         }
         .frame(height: height)
+    }
+
+    private var notch: CGFloat { lineWidth + lineGap * 2 }
+
+    private func tickX(width: CGFloat, pace: Double) -> CGFloat {
+        min(max(width * min(max(pace, 0), 1), notch / 2), width - notch / 2)
+    }
+
+    /// Erases a `notch`-wide column through the bar at the pace position, so
+    /// the tick line sits in a gap punched through fill and track alike.
+    @ViewBuilder
+    private func barMask(width: CGFloat) -> some View {
+        if let paceRatio {
+            let x = tickX(width: width, pace: paceRatio)
+            HStack(spacing: notch) {
+                Rectangle().frame(width: max(x - notch / 2, 0))
+                Rectangle()
+            }
+        } else {
+            Rectangle()
+        }
+    }
+
+    private func tickColor(pace: Double) -> Color {
+        pace > 0 && usedRatio / pace > 1 ? .red : .primary.opacity(0.6)
     }
 }

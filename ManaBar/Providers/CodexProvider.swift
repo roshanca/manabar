@@ -92,7 +92,8 @@ struct CodexProvider: UsageProvider {
             metrics.append(QuotaMetric(
                 id: "codex.\(seconds)", kind: kind, title: title,
                 usedRatio: min(max(percent / 100, 0), 1),
-                resetDate: DateParsing.parse(epochSeconds: window.resetAt)))
+                resetDate: DateParsing.parse(epochSeconds: window.resetAt),
+                windowSeconds: window.limitWindowSeconds.map(TimeInterval.init)))
         }
         guard !metrics.isEmpty else {
             throw ProviderFailure.transient("Codex usage response had no rate-limit windows.")

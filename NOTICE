@@ -12,8 +12,15 @@ which itself adapts provider-contract research and implementation patterns from:
 - **OpenUsage** — https://github.com/robinebers/openusage (tag v0.7.6)
   MIT License, Copyright (c) 2026 Robin Ebers
 
-Only the API contracts were borrowed; ManaBar's UI and architecture are
-original. Kimi Coding Plan endpoints were reverse-engineered independently.
+The provider card icons in Assets.xcassets come from:
+
+- **magpie** — https://github.com/yetone/magpie
+  MIT License, Copyright (c) 2026 yetone
+  (ProviderClaude, ProviderDevin, ProviderKimi)
+- **ai-usage-menubar** (ProviderCodex), per above.
+
+Beyond that, ManaBar's UI and architecture are original. Kimi Coding Plan
+endpoints were reverse-engineered independently.
 
 ---
 
