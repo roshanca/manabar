@@ -4,6 +4,8 @@ macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用�
 
 支持：**Kimi Coding Plan**、**Claude Code**、**Codex**（ChatGPT 订阅）、**Devin**。
 
+![ManaBar：Icons + % 菜单栏与 Popover 面板](https://i.roshanca.com/img/upic/25pSKB.png)
+
 ## 特性
 
 - 菜单栏双样式：魔法条（填充 = 选定服务商的配额消耗，>80% 变橙，>95% 变红闪烁，可配 "Out of mana" 彩蛋）或 Icons + % 条带（每家一个「图标 + 百分比」，weekly 窗口带上标 ʷ，数字同样 >80% 橙 / >95% 红）
