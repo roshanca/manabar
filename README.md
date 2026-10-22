@@ -6,9 +6,9 @@ macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用�
 
 ## 特性
 
-- 菜单栏魔法条：填充 = 选定服务商的配额消耗，>80% 变橙，>95% 变红闪烁（可配 "Out of mana" 彩蛋）
-- Popover 面板按服务商分卡片：5h / weekly 限额、重置倒计时、套餐名
-- Kimi 卡片附 booster 余额与本月加油包消费；Claude 附 extra usage；Codex 附 flex credits 与 usage-limit reset 券（数量/可用数/最早到期）
+- 菜单栏双样式：魔法条（填充 = 选定服务商的配额消耗，>80% 变橙，>95% 变红闪烁，可配 "Out of mana" 彩蛋）或 Icons + % 条带（每家一个「图标 + 百分比」，weekly 窗口带上标 ʷ，数字同样 >80% 橙 / >95% 红）
+- Popover 面板按服务商分区：5h / weekly 限额、重置倒计时、套餐徽标（Kimi 附会员档位，如 Allegretto）
+- Kimi 附 booster 余额与本月加油包消费；Claude 附 extra usage；Codex 附 flex credits 与 usage-limit reset 券（数量/可用数/最早到期）
 - 失败保留上次数据并标记 stale；刷新间隙零 CPU
 - 凭证只读本机文件 / Keychain，绝不外传；token 刷新后原子写回（与 CLI 并发安全）
 
@@ -34,7 +34,7 @@ make run                # 安装并启动
 
 ## 设置
 
-启用服务商、每家的菜单栏指标（5h / weekly / 双层同显）、菜单栏显示哪家、刷新间隔（1/5/15/30/60 分钟 + 手动）、剩余/已用切换、登录启动、Devin 凭证来源显示。
+启用服务商、菜单栏样式（魔法条 / Icons + %）、每家的菜单栏指标（5h / weekly / 双层同显，Icons + % 下双层取较满窗口）、魔法条显示哪家、刷新间隔（1/5/15/30/60 分钟 + 手动）、剩余/已用切换、登录启动、Devin 凭证来源显示。
 
 ## 署名
 
