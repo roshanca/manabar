@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Root popover: one card per enabled provider + bottom action bar.
+/// Root popover: one section per enabled provider, divided by rules, plus a
+/// bottom action bar.
 struct PopoverView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openSettings) private var openSettings
@@ -30,8 +31,12 @@ struct PopoverView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 24)
             } else {
-                ForEach(providers) { provider in
-                    ProviderCardView(providerID: provider)
+                ForEach(Array(providers.enumerated()), id: \.element) { index, provider in
+                    if index > 0 {
+                        Divider()
+                            .padding(.vertical, 2)
+                    }
+                    ProviderSectionView(providerID: provider)
                 }
             }
 

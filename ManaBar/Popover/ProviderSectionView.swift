@@ -19,8 +19,9 @@ struct ExtrasView: View {
     }
 }
 
-/// One provider card: header (name, plan, stale badge), quota rows, extras.
-struct ProviderCardView: View {
+/// One provider section: header (icon, name, plan badge, stale badge), quota
+/// rows, extras. Sections are separated by dividers, not cards.
+struct ProviderSectionView: View {
     let providerID: ProviderID
     @Environment(AppState.self) private var appState
 
@@ -29,8 +30,8 @@ struct ProviderCardView: View {
         let stale = appState.isStale(providerID)
         let failure = appState.failureMessage(providerID)
 
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
                 Image(providerID.iconAssetName)
                     .resizable()
                     .frame(width: 16, height: 16)
@@ -58,11 +59,7 @@ struct ProviderCardView: View {
                 }
                 if !snapshot.extras.isEmpty {
                     ExtrasView(extras: snapshot.extras)
-                }
-                if stale, let fetched = snapshot.fetchedAt as Date? {
-                    Text("updated \(RelativeReset.ageString(fetched))")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .padding(.top, 2)
                 }
             } else if let failure {
                 Text(failure)
@@ -75,8 +72,6 @@ struct ProviderCardView: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(12)
-        .background(.quaternary.opacity(0.4), in: .rect(cornerRadius: 10))
         .opacity(stale && snapshot != nil ? 0.65 : 1)
     }
 }

@@ -6,6 +6,8 @@ import Foundation
 /// token. usages.limit_5h / limit_7d carry used_ratio + reset_time;
 /// booster_wallet carries a plan-granted booster credit record (face value in
 /// `amount`, remainder in `amountLeft`) — NOT the recharge balance.
+/// GET {api host}/coding/v1/me with the same token carries the membership
+/// tier in `user_level_name` ("Allegretto", ...).
 ///
 /// The real recharge balance (加油包余额) only exists in the web-session API:
 /// POST {web host}/apiv2/kimi.gateway.membership.v2.MembershipService/
@@ -89,6 +91,15 @@ struct KimiProvider: UsageProvider {
         let subscriptionBalance: SubscriptionBalance?
     }
 
+    /// /coding/v1/me — only the tier name is decoded.
+    private struct MeResponse: Decodable {
+        let userLevelName: String?
+
+        enum CodingKeys: String, CodingKey {
+            case userLevelName = "user_level_name"
+        }
+    }
+
     /// Result of the optional web-session stats call.
     private struct WebStats {
         var metrics: [QuotaMetric] = []
@@ -157,8 +168,21 @@ struct KimiProvider: UsageProvider {
         }
 
         return ProviderSnapshot(
-            providerID: id, planName: nil,
+            providerID: id, planName: await fetchPlanName(accessToken: credentials.accessToken, region: region),
             metrics: metrics, extras: extras, fetchedAt: Date())
+    }
+
+    /// Membership tier badge ("Allegretto", ...) from /coding/v1/me — best
+    /// effort: the same coding token, failures just leave planName nil.
+    private func fetchPlanName(accessToken: String, region: KimiCredentialStore.Region) async -> String? {
+        guard let url = URL(string: "https://\(region.apiHost)/coding/v1/me") else { return nil }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        guard let (data, _) = try? await HTTPClient.shared.send(request),
+              let me = try? JSONDecoder().decode(MeResponse.self, from: data),
+              let name = me.userLevelName, !name.isEmpty else { return nil }
+        return name
     }
 
     // MARK: - Web session stats
