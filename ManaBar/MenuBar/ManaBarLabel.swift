@@ -16,9 +16,12 @@ struct ManaBarLabel: View {
     @State private var blinkPhase = false
 
     private var bars: [MenuBarBar] { appState.menuBarBars }
+    /// Blink only applies to the mana bar — the icons+% strip signals
+    /// critical with red digits instead.
     private var isCritical: Bool {
-        bars.contains { ($0.metric?.usedRatio ?? 0) > 0.95 }
-            || UserDefaults.standard.bool(forKey: "debugForceCritical")
+        appState.settings.menuBarStyle == .manaBar
+            && (bars.contains { ($0.metric?.usedRatio ?? 0) > 0.95 }
+                || UserDefaults.standard.bool(forKey: "debugForceCritical"))
     }
 
     var body: some View {
@@ -33,9 +36,16 @@ struct ManaBarLabel: View {
             }
     }
 
-    private var image: some View {
-        Image(nsImage: ManaBarImage.make(
-            bars: bars,
-            outOfMana: isCritical && appState.settings.outOfManaAlert))
+    private var image: Image {
+        switch appState.settings.menuBarStyle {
+        case .manaBar:
+            Image(nsImage: ManaBarImage.make(
+                bars: bars,
+                outOfMana: isCritical && appState.settings.outOfManaAlert))
+        case .providers:
+            Image(nsImage: MenuBarIconsImage.make(
+                entries: appState.menuBarProviderEntries,
+                showRemaining: appState.settings.showRemaining))
+        }
     }
 }

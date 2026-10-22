@@ -64,10 +64,13 @@ enum ManaBarImage {
         }
     }
 
-    private static func fillColor(for ratio: Double) -> NSColor {
+    /// Shared severity scale: `normal` below 80%, orange >80%, red >95%.
+    /// Icons+% strips pass `normal: .labelColor` — neutral until hot.
+    static func fillColor(for ratio: Double,
+                          normal: NSColor = NSColor(red: 0.25, green: 0.55, blue: 1.0, alpha: 1)) -> NSColor {
         if ratio > 0.95 { return .systemRed }
         if ratio > 0.8 { return .systemOrange }
-        return NSColor(red: 0.25, green: 0.55, blue: 1.0, alpha: 1) // mana blue
+        return normal
     }
 
     /// VoiceOver summary per bar — keeps "no data" distinguishable from a

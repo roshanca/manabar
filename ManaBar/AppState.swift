@@ -103,6 +103,25 @@ final class AppState {
         }
     }
 
+    /// Icon+% strip entries for the `.providers` menu-bar style — one slot
+    /// per enabled provider in stable ProviderID order. `.dual` resolves to
+    /// the fuller of the provider's windowed metrics; nil keeps a "--" slot
+    /// so positions never shift.
+    var menuBarProviderEntries: [(provider: ProviderID, metric: QuotaMetric?)] {
+        ProviderID.allCases
+            .filter { settings.enabledProviders.contains($0) }
+            .map { provider in
+                let metrics = snapshots[provider]?.metrics ?? []
+                let metric = switch settings.menuBarDisplay(for: provider) {
+                case .session: metrics.first { $0.kind == .session } ?? metrics.first
+                case .weekly: metrics.first { $0.kind == .weekly } ?? metrics.first
+                case .dual: metrics.filter { $0.kind != nil }
+                        .max { $0.usedRatio < $1.usedRatio } ?? metrics.first
+                }
+                return (provider, metric)
+            }
+    }
+
     func isStale(_ provider: ProviderID) -> Bool {
         failures[provider] != nil
     }

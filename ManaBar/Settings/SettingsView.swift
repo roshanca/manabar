@@ -26,14 +26,20 @@ struct SettingsView: View {
                         .disabled(!settings.enabledProviders.contains(provider))
                     }
                 }
-                Text(#""Both" draws two stacked bars: short-period quota on top, weekly quota below."#)
+                Text(#""Both" draws two stacked bars: short-period quota on top, weekly quota below. With "Icons + %" it shows the fuller window."#)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Picker("Menu bar style", selection: menuBarStyleBinding) {
+                    ForEach(AppSettings.MenuBarStyle.allCases) { style in
+                        Text(style.label).tag(style)
+                    }
+                }
                 Picker("Menu bar shows", selection: primaryProviderBinding) {
                     ForEach(ProviderID.allCases) { provider in
                         Text(provider.displayName).tag(provider)
                     }
                 }
+                .disabled(settings.menuBarStyle == .providers)
             }
 
             Section("General") {
@@ -119,6 +125,12 @@ struct SettingsView: View {
         Binding(
             get: { settings.primaryProvider },
             set: { settings.primaryProvider = $0 })
+    }
+
+    private var menuBarStyleBinding: Binding<AppSettings.MenuBarStyle> {
+        Binding(
+            get: { settings.menuBarStyle },
+            set: { settings.menuBarStyle = $0 })
     }
 
     private var refreshIntervalBinding: Binding<AppSettings.RefreshInterval> {

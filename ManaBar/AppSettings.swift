@@ -29,6 +29,22 @@ final class AppSettings {
         }
     }
 
+    /// Menu-bar presentation: the mana bar for the primary provider, or an
+    /// icon + percentage slot for every enabled provider.
+    enum MenuBarStyle: String, CaseIterable, Identifiable, Sendable {
+        case manaBar
+        case providers
+
+        var id: String { rawValue }
+
+        var label: String {
+            switch self {
+            case .manaBar: "Mana bar"
+            case .providers: "Icons + %"
+            }
+        }
+    }
+
     /// How a provider's quota appears in the menu bar: one window, or both
     /// stacked (short-period on top, weekly below). Raw values stay
     /// compatible with the MetricKind strings persisted by older builds —
@@ -60,6 +76,10 @@ final class AppSettings {
     var primaryProvider: ProviderID {
         didSet { defaults.set(primaryProvider.rawValue, forKey: "primaryProvider") }
     }
+    /// Mana bar vs. per-provider icon+% strip.
+    var menuBarStyle: MenuBarStyle {
+        didSet { defaults.set(menuBarStyle.rawValue, forKey: "menuBarStyle") }
+    }
     /// Which display mode (session/weekly/dual) each provider uses in the
     /// menu bar when primary.
     var menuBarMetric: [ProviderID: MenuBarDisplay] {
@@ -89,6 +109,8 @@ final class AppSettings {
         }
         primaryProvider = defaults.string(forKey: "primaryProvider")
             .flatMap(ProviderID.init(rawValue:)) ?? .kimi
+        menuBarStyle = defaults.string(forKey: "menuBarStyle")
+            .flatMap(MenuBarStyle.init(rawValue:)) ?? .manaBar
         menuBarMetric = (defaults.dictionary(forKey: "menuBarMetric") as? [String: String])?
             .reduce(into: [:]) { result, pair in
                 guard let provider = ProviderID(rawValue: pair.key),
