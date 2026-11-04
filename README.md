@@ -25,6 +25,12 @@ make run                # 安装并启动
 
 或直接 `xcodegen && open ManaBar.xcodeproj` 在 Xcode 里运行。要求 macOS 26+ / Xcode 27+。
 
+### App 图标
+
+macOS 26 使用 `ManaBar/AppIcon.icon`（Icon Composer 格式），由系统负责圆角和外观适配，避免旧式图标被套上额外外框。原始图案保存在其 `Assets/Artwork.png` 中，不预先裁圆角。
+
+`AppIcon.appiconset` 保留带透明留白的 PNG 资源；更新图案后运行 `swift scripts/generate-app-icons.swift` 同步这 10 个尺寸。Xcode 构建时优先使用同名的 `.icon` 文件。
+
 ## 凭证来源
 
 | 服务商 | 来源 |

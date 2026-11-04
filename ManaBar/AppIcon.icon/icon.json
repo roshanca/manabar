@@ -1,0 +1,15 @@
+{
+  "fill" : { "solid" : "srgb:0.02000,0.36000,0.93000,1.00000" },
+  "groups" : [
+    {
+      "name" : "ManaBar artwork",
+      "layers" : [
+        { "image-name" : "Artwork.png", "name" : "M and quota bar", "glass" : false }
+      ],
+      "shadow" : { "kind" : "none", "opacity" : 0 },
+      "specular" : false,
+      "translucency" : { "enabled" : false, "value" : 0 }
+    }
+  ],
+  "supported-platforms" : { "squares" : "shared" }
+}
