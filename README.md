@@ -1,49 +1,69 @@
 # ManaBar 🔵
 
-macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用量，菜单栏图标是一条会消耗、会「回蓝」的魔法条。
+**English** · [简体中文](README.zh-CN.md)
 
-支持：**Kimi Coding Plan**、**Claude Code**、**Codex**（ChatGPT 订阅）、**Devin**。
+A macOS menu bar app that monitors usage across your AI coding subscriptions — the menu bar icon is a literal mana bar that drains as you burn quota and refills when the window resets.
 
-![ManaBar：Icons + % 菜单栏与 Popover 面板](https://i.roshanca.com/img/upic/25pSKB.png)
+Supports **Kimi Coding Plan**, **Claude Code**, **Codex** (ChatGPT subscription), and **Devin**.
 
-## 特性
+![ManaBar: Icons + % menu bar and the popover panel](https://i.roshanca.com/img/upic/25pSKB.png)
 
-- 菜单栏双样式：魔法条（填充 = 选定服务商的配额消耗，>80% 变橙，>95% 变红闪烁，可配 "Out of mana" 彩蛋）或 Icons + % 条带（每家一个「图标 + 百分比」，weekly 窗口带上标 ʷ，数字同样 >80% 橙 / >95% 红）
-- Popover 面板按服务商分区：5h / weekly 限额、重置倒计时、套餐徽标（Kimi 附会员档位，如 Allegretto）
-- Kimi 附 booster 余额与本月加油包消费；Claude 附 extra usage；Codex 附 flex credits 与 usage-limit reset 券（数量/可用数/最早到期）
-- 失败保留上次数据并标记 stale；刷新间隙零 CPU
-- 凭证只读本机文件 / Keychain，绝不外传；token 刷新后原子写回（与 CLI 并发安全）
+## Features
 
-## 构建
+### Menu bar — two styles
+
+- **Mana bar**: fill level tracks the chosen provider's quota. Turns orange above 80%, blinking red above 95%, with an optional "Out of mana" easter-egg label at critical.
+- **Icons + %**: one icon + percentage slot per enabled provider. Weekly windows carry a superscript ʷ, a slot with no data shows a dimmed `--`, and the same 80/95 coloring applies.
+- Per-provider window choice: short cycle only (5h — daily for Devin), weekly only, or **Both**: two stacked bars, short cycle on top, weekly below. A window with no data keeps its empty track instead of pretending 0%. In Icons + % mode, *Both* displays whichever window is fuller.
+
+### Popover panel
+
+- One section per provider: a bar per quota window with its reset countdown, a plan badge (Kimi tier such as *Allegretto*, Claude *Max 5x*, Codex *Pro 20x*), plus account extras.
+- Every bar carries a **pace tick** marking expected usage for the elapsed window — it turns orange when you're burning more than ~5pp ahead of pace.
+- **Kimi** — booster credit balance and this month's booster spend. Add the optional kimi.com web session to also see the real recharge balance and a subscription-period meter.
+- **Claude Code** — 5h and weekly windows, per-model weekly limits (e.g. *Sonnet weekly*), and extra-usage spend vs. monthly cap.
+- **Codex** — flex credit balance, plus banked **rate-limit reset credits**: an expandable row listing each credit's expiry (severity dots: red <48 h, orange <7 d), and you can spend the earliest credit right from the panel — inline confirm, idempotent claim, count refreshes in place.
+- **Devin** — daily and weekly windows plus the extra-usage (overage) balance.
+- Header shows last-refresh age; footer has Refresh / Settings / Quit. Opening the popover always fetches fresh data. A failed refresh keeps the last snapshot under an orange *stale* badge — the panel never blanks out.
+
+### Credentials & behavior
+
+- Credentials are read-only against local files / the Keychain and never leave the machine. Refreshed tokens are written back atomically — safe alongside concurrent CLI usage.
+- Zero CPU between refreshes.
+
+## Build
 
 ```bash
-brew install xcodegen   # 一次性
+brew install xcodegen   # once
 make build              # xcodegen + xcodebuild
-make install            # 构建并替换 /Applications/ManaBar.app
-make run                # 安装并启动
+make install            # build and replace /Applications/ManaBar.app
+make run                # install and launch
 ```
 
-或直接 `xcodegen && open ManaBar.xcodeproj` 在 Xcode 里运行。要求 macOS 26+ / Xcode 27+。
+Or `xcodegen && open ManaBar.xcodeproj` and run from Xcode. Requires macOS 26+ / Xcode 27+.
 
-### App 图标
+### App icon
 
-macOS 26 使用 `ManaBar/AppIcon.icon`（Icon Composer 格式），由系统负责圆角和外观适配，避免旧式图标被套上额外外框。原始图案保存在其 `Assets/Artwork.png` 中，不预先裁圆角。
+On macOS 26 the app uses `ManaBar/AppIcon.icon` (Icon Composer format): the system handles corner rounding and appearance variants, avoiding the extra frame a legacy iconset can get. The source artwork lives in `Assets/Artwork.png`, uncropped.
 
-`AppIcon.appiconset` 保留带透明留白的 PNG 资源；更新图案后运行 `swift scripts/generate-app-icons.swift` 同步这 10 个尺寸。Xcode 构建时优先使用同名的 `.icon` 文件。
+`AppIcon.appiconset` still ships PNG fallbacks; after changing the artwork run `swift scripts/generate-app-icons.swift` to regenerate the 10 sizes. Xcode prefers the `.icon` file of the same name at build time.
 
-## 凭证来源
+For UI work and screenshots, `defaults write com.roshan.manabar debugShowPopover -bool true` (or `debugShowSettings`) opens the popover / settings in a regular window at launch.
 
-| 服务商 | 来源 |
+## Credentials
+
+| Provider | Source |
 | --- | --- |
-| Kimi | `~/.kimi-code/credentials/kimi-code.json`（kimi CLI 登录后自动获得） |
-| Claude Code | macOS Keychain `Claude Code-credentials`（首次读取会弹系统授权框，属正常） |
-| Codex | `~/.codex/auth.json`（需 ChatGPT 登录方式，纯 API key 无用量数据） |
-| Devin | 自动发现 `~/.local/share/devin/credentials.toml` / Devin 编辑器状态库；设置页只读显示命中的来源 |
+| Kimi | `~/.kimi-code/credentials/kimi-code.json` — created by signing in with the kimi CLI |
+| Kimi web session (optional) | Paste your kimi.com `refresh_token` in Settings → unlocks the real booster recharge balance and the subscription meter. Grab it on kimi.com: DevTools → Console → `localStorage.getItem('refresh_token')`. Stored in the Keychain, valid ~90 days |
+| Claude Code | macOS Keychain item `Claude Code-credentials` — the first read pops a system consent prompt, which is expected |
+| Codex | `~/.codex/auth.json` — requires the ChatGPT sign-in flow; an API-key-only login exposes no usage data |
+| Devin | Auto-discovered from `~/.local/share/devin/credentials.toml` or the Devin Desktop state DB; Settings shows which source matched |
 
-## 设置
+## Settings
 
-启用服务商、菜单栏样式（魔法条 / Icons + %）、每家的菜单栏指标（5h / weekly / 双层同显，Icons + % 下双层取较满窗口）、魔法条显示哪家、刷新间隔（1/5/15/30/60 分钟 + 手动）、剩余/已用切换、登录启动、Devin 凭证来源显示。
+Per-provider enable toggles and menu-bar window (short cycle / weekly / both), menu bar style and which provider drives the mana bar, refresh interval (manual, 1/5/15/30/60 min — plus the Refresh button), used-vs-remaining display, launch at login, the "Out of mana" alert, the Kimi web-session token, and a readout of the detected Devin credential source.
 
-## 署名
+## Acknowledgements
 
-Claude Code / Codex / Devin 的接口契约改编自 [ai-usage-menubar](https://github.com/burakgon/ai-usage-menubar)（MIT），其自身改编自 [OpenUsage](https://github.com/robinebers/openusage)（MIT）。详见 [NOTICE](NOTICE)。
+The Claude Code / Codex / Devin API contracts are adapted from [ai-usage-menubar](https://github.com/burakgon/ai-usage-menubar) (MIT), itself adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT); the pace-tick logic also comes from OpenUsage. See [NOTICE](NOTICE).
