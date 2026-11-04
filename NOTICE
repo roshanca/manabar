@@ -1,8 +1,8 @@
 # NOTICE
 
 ManaBar's provider interface contracts (credential discovery, OAuth refresh
-flows, and usage-response field mappings for Claude Code, Codex, and Devin)
-were adapted from:
+flows, usage-response field mappings, and the Codex rate-limit reset claim
+flow for Claude Code, Codex, and Devin) were adapted from:
 
 - **ai-usage-menubar** — https://github.com/burakgon/ai-usage-menubar
   MIT License, Copyright (c) 2026 Burak Gon

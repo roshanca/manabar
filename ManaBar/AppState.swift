@@ -77,6 +77,23 @@ final class AppState {
         }
     }
 
+    // MARK: - Codex limit resets
+
+    /// Spends one Codex rate-limit reset credit. `redeemRequestID` is the
+    /// view's idempotency key — retries reuse it so a lost answer can't
+    /// double-spend. Every definitive outcome refreshes right away so the
+    /// meters and the reset count drop in place.
+    func claimCodexReset(redeemRequestID: String) async -> CodexResetClaimService.Outcome {
+        let outcome = await CodexResetClaimService.shared.claim(redeemRequestID: redeemRequestID)
+        switch outcome {
+        case .success, .nothingToReset, .noCredit:
+            await refresh()
+        case .authExpired, .failed:
+            break
+        }
+        return outcome
+    }
+
     // MARK: - Menu bar state
 
     /// Bar slots the mana bar draws for the primary provider, top → bottom.
