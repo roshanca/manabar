@@ -61,6 +61,10 @@ struct ProviderSectionView: View {
                     ExtrasView(extras: snapshot.extras)
                         .padding(.top, 2)
                 }
+                if let resets = snapshot.resets {
+                    ResetsRowView(resets: resets)
+                        .padding(.top, 2)
+                }
             } else if let failure {
                 Text(failure)
                     .font(.callout)

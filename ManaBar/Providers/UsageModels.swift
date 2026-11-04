@@ -92,10 +92,26 @@ struct ExtraInfo: Sendable, Identifiable {
     let value: String
 }
 
+/// Banked usage-limit resets a provider lets the user spend from the panel
+/// (Codex rate-limit reset credits today). Attached to the snapshot so the
+/// popover row stays data-driven; nil when there's nothing to show.
+struct ResetCredits: Sendable {
+    /// Credits the account holds (the API's `available_count`).
+    var count: Int
+    /// `applicable_available_count` — the subset the server thinks would take
+    /// effect right now (0 when no window needs resetting). A hint, not a
+    /// gate: Use stays available and the consume answer is authoritative.
+    var usableNow: Int?
+    /// Expiries of the available credits, earliest first. May be empty when
+    /// the detail endpoint fails — the row then shows just the count.
+    var expiries: [Date]
+}
+
 struct ProviderSnapshot: Sendable {
     let providerID: ProviderID
     var planName: String?
     var metrics: [QuotaMetric]
     var extras: [ExtraInfo]
     let fetchedAt: Date
+    var resets: ResetCredits? = nil
 }
