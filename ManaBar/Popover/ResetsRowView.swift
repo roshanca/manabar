@@ -27,8 +27,6 @@ struct ResetsRowView: View {
     /// outcome, so only a transport-failure retry replays the same pair.
     @State private var requestID = UUID().uuidString
 
-    private var canUse: Bool { resets.usableNow != 0 }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             header
@@ -104,7 +102,9 @@ struct ResetsRowView: View {
                 .font(.caption)
                 .lineLimit(1)
             Spacer(minLength: 8)
-            if showUse && canUse {
+            // Use stays on the earliest even when `applicable_available_count`
+            // is 0 — the consume answer's nothing_to_reset is authoritative.
+            if showUse {
                 Button("Use") { phase = .confirm }
                     .controlSize(.mini)
             } else {
@@ -125,6 +125,12 @@ struct ResetsRowView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            if resets.usableNow == 0 {
+                Text("No window needs resetting yet — a reset may have no effect.")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 8) {
                 Button("Use reset") { claim() }
                     .buttonStyle(.borderedProminent)

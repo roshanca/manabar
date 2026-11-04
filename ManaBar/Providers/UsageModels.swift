@@ -98,8 +98,9 @@ struct ExtraInfo: Sendable, Identifiable {
 struct ResetCredits: Sendable {
     /// Credits the account holds (the API's `available_count`).
     var count: Int
-    /// Subset redeemable right now (`applicable_available_count`);
-    /// nil means unknown — treated as all usable.
+    /// `applicable_available_count` — the subset the server thinks would take
+    /// effect right now (0 when no window needs resetting). A hint, not a
+    /// gate: Use stays available and the consume answer is authoritative.
     var usableNow: Int?
     /// Expiries of the available credits, earliest first. May be empty when
     /// the detail endpoint fails — the row then shows just the count.
