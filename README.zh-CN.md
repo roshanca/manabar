@@ -45,9 +45,9 @@ make run                # 安装并启动
 
 ### App 图标
 
-macOS 26 使用 `ManaBar/AppIcon.icon`（Icon Composer 格式），由系统负责圆角和外观适配，避免旧式图标被套上额外外框。原始图案保存在其 `Assets/Artwork.png` 中，不预先裁圆角。
+本应用只携带 `ManaBar/AppIcon.icon`（Icon Composer 格式），由系统负责圆角和外观适配。原始图案保存在其 `Assets/Artwork.png` 中，不预先裁圆角。
 
-`AppIcon.appiconset` 保留带透明留白的 PNG 资源；更新图案后运行 `swift scripts/generate-app-icons.swift` 同步这 10 个尺寸。Xcode 构建时优先使用同名的 `.icon` 文件。
+不要重新加回 `AppIcon.appiconset`：存在同名 `.icon` 时 actool 本来就会忽略 asset catalog 里的图标，而且旧 PNG 预先烘培了圆角和透明留白——macOS 26+ 一旦用到这种形状就会把它内缩渲染在灰色玻璃底板上，也就是图标四周那圈灰边（icon jail）。
 
 开发调试 / 截图时可用 `defaults write com.roshan.manabar debugShowPopover -bool true`（或 `debugShowSettings`）让 Popover / 设置以普通窗口启动。
 

@@ -45,9 +45,9 @@ Or `xcodegen && open ManaBar.xcodeproj` and run from Xcode. Requires macOS 26+ /
 
 ### App icon
 
-On macOS 26 the app uses `ManaBar/AppIcon.icon` (Icon Composer format): the system handles corner rounding and appearance variants, avoiding the extra frame a legacy iconset can get. The source artwork lives in `Assets/Artwork.png`, uncropped.
+The app ships only `ManaBar/AppIcon.icon` (Icon Composer format): the system handles corner rounding and appearance variants. The source artwork lives in `Assets/Artwork.png`, uncropped.
 
-`AppIcon.appiconset` still ships PNG fallbacks; after changing the artwork run `swift scripts/generate-app-icons.swift` to regenerate the 10 sizes. Xcode prefers the `.icon` file of the same name at build time.
+Do not add an `AppIcon.appiconset` back. actool ignores same-named asset-catalog icons when a `.icon` exists anyway, and the old PNGs baked in a rounded mask plus transparent margin — a shape macOS 26+ insets on a gray glass plate (the "icon jail" ring) in any context that renders it.
 
 For UI work and screenshots, `defaults write com.roshan.manabar debugShowPopover -bool true` (or `debugShowSettings`) opens the popover / settings in a regular window at launch.
 
