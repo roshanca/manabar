@@ -51,7 +51,7 @@ private struct WalletBalancesView: View {
         ]
         if let spent = balance.todaySpent {
             extras.append(ExtraInfo(
-                id: "\(balance.id).today", label: "Today",
+                id: "\(balance.id).today", label: "Spent today",
                 value: "≈ " + Self.formatted(spent, currency: balance.currency)))
         }
         return extras
