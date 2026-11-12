@@ -35,7 +35,8 @@ struct DeepSeekProvider: UsageProvider {
 
     func fetchUsage() async throws -> ProviderSnapshot {
         do {
-            let key = try await DeepSeekCredentialStore.shared.apiKey()
+            let store = DeepSeekCredentialStore.shared
+            let (key, generation) = try await store.apiKey()
             guard let url = URL(string: "https://api.deepseek.com/user/balance") else {
                 throw ProviderFailure.transient("Invalid DeepSeek API URL.")
             }
@@ -63,7 +64,7 @@ struct DeepSeekProvider: UsageProvider {
             var snapshot = ProviderSnapshot(
                 providerID: id, planName: nil,
                 metrics: [], extras: [], fetchedAt: Date())
-            snapshot.balances = balances
+            snapshot.balances = await store.trackSpend(balances, generation: generation)
             snapshot.isAvailable = response.isAvailable
             return snapshot
         } catch HTTPError.badStatus(let code) where code == 401 || code == 403 {

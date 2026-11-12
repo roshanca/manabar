@@ -106,6 +106,8 @@ struct WalletBalance: Sendable, Identifiable {
     let total: Decimal
     let granted: Decimal
     let toppedUp: Decimal
+    /// Locally estimated spend since local midnight (DeepSeek only).
+    var todaySpent: Decimal? = nil
 
     var id: String { currency }
 }

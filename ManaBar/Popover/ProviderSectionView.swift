@@ -36,15 +36,25 @@ private struct WalletBalancesView: View {
                 Text(Self.formatted(balance.total, currency: balance.currency))
                     .font(.title2.monospacedDigit())
                     .foregroundStyle(color(for: balance))
-                ExtrasView(extras: [
-                    ExtraInfo(id: "\(balance.id).toppedUp", label: "Topped up",
-                              value: Self.formatted(balance.toppedUp, currency: balance.currency)),
-                    ExtraInfo(id: "\(balance.id).granted", label: "Granted",
-                              value: Self.formatted(balance.granted, currency: balance.currency)),
-                ])
+                ExtrasView(extras: extras(for: balance))
             }
             .padding(.top, 4)
         }
+    }
+
+    private func extras(for balance: WalletBalance) -> [ExtraInfo] {
+        var extras = [
+            ExtraInfo(id: "\(balance.id).toppedUp", label: "Topped up",
+                      value: Self.formatted(balance.toppedUp, currency: balance.currency)),
+            ExtraInfo(id: "\(balance.id).granted", label: "Granted",
+                      value: Self.formatted(balance.granted, currency: balance.currency)),
+        ]
+        if let spent = balance.todaySpent {
+            extras.append(ExtraInfo(
+                id: "\(balance.id).today", label: "Today (est.)",
+                value: "≈ " + Self.formatted(spent, currency: balance.currency)))
+        }
+        return extras
     }
 
     private func color(for balance: WalletBalance) -> Color {

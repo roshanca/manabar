@@ -24,7 +24,7 @@ Supports **Kimi Coding Plan**, **Claude Code**, **Codex** (ChatGPT subscription)
 - **Claude Code** — 5h and weekly windows, per-model weekly limits (e.g. *Sonnet weekly*), and extra-usage spend vs. monthly cap.
 - **Codex** — flex credit balance, plus banked **rate-limit reset credits**: an expandable row listing each credit's expiry (severity dots: red <48 h, orange <7 d), and you can spend the earliest credit right from the panel — inline confirm, idempotent claim, count refreshes in place.
 - **Devin** — daily and weekly windows plus the extra-usage (overage) balance.
-- **DeepSeek** — wallet balance total with topped-up / granted breakdown; orange below the low-balance threshold, red when exhausted; popover only, not shown in the menu bar.
+- **DeepSeek** — wallet balance total with topped-up / granted breakdown and an estimated today's spend (computed locally from balance changes); orange below the low-balance threshold, red when exhausted; popover only, not shown in the menu bar.
 - Header shows last-refresh age; footer has Refresh / Settings / Quit. Opening the popover always fetches fresh data. A failed refresh keeps the last snapshot under an orange *stale* badge — the panel never blanks out.
 
 ### Credentials & behavior
