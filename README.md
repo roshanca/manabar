@@ -4,7 +4,7 @@
 
 A macOS menu bar app that monitors usage across your AI coding subscriptions — the menu bar icon is a literal mana bar that drains as you burn quota and refills when the window resets.
 
-Supports **Kimi Coding Plan**, **Claude Code**, **Codex** (ChatGPT subscription), and **Devin**.
+Supports **Kimi Coding Plan**, **Claude Code**, **Codex** (ChatGPT subscription), **Devin**, and **DeepSeek**.
 
 ![ManaBar: Icons + % menu bar and the popover panel](https://i.roshanca.com/img/upic/25pSKB.png)
 
@@ -24,6 +24,7 @@ Supports **Kimi Coding Plan**, **Claude Code**, **Codex** (ChatGPT subscription)
 - **Claude Code** — 5h and weekly windows, per-model weekly limits (e.g. *Sonnet weekly*), and extra-usage spend vs. monthly cap.
 - **Codex** — flex credit balance, plus banked **rate-limit reset credits**: an expandable row listing each credit's expiry (severity dots: red <48 h, orange <7 d), and you can spend the earliest credit right from the panel — inline confirm, idempotent claim, count refreshes in place.
 - **Devin** — daily and weekly windows plus the extra-usage (overage) balance.
+- **DeepSeek** — wallet balance total with topped-up / granted breakdown; orange below the low-balance threshold, red when exhausted; popover only, not shown in the menu bar.
 - Header shows last-refresh age; footer has Refresh / Settings / Quit. Opening the popover always fetches fresh data. A failed refresh keeps the last snapshot under an orange *stale* badge — the panel never blanks out.
 
 ### Credentials & behavior
@@ -59,10 +60,11 @@ For UI work and screenshots, `defaults write com.roshan.manabar debugShowPopover
 | Claude Code | macOS Keychain item `Claude Code-credentials` — the first read pops a system consent prompt, which is expected |
 | Codex | `~/.codex/auth.json` — requires the ChatGPT sign-in flow; an API-key-only login exposes no usage data |
 | Devin | Auto-discovered from `~/.local/share/devin/credentials.toml` or the Devin Desktop state DB; Settings shows which source matched |
+| DeepSeek | API key pasted in Settings → stored in the Keychain |
 
 ## Settings
 
-Per-provider enable toggles and menu-bar window (short cycle / weekly / both), menu bar style and which provider drives the mana bar, refresh interval (manual, 1/5/15/30/60 min — plus the Refresh button), used-vs-remaining display, launch at login, the "Out of mana" alert, the Kimi web-session token, and a readout of the detected Devin credential source.
+Per-provider enable toggles and menu-bar window (short cycle / weekly / both), menu bar style and which provider drives the mana bar, refresh interval (manual, 1/5/15/30/60 min — plus the Refresh button), used-vs-remaining display, launch at login, the "Out of mana" alert, the Kimi web-session token, the DeepSeek API key and low-balance threshold, and a readout of the detected Devin credential source.
 
 ## Acknowledgements
 

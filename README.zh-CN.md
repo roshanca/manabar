@@ -4,7 +4,7 @@
 
 macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用量，菜单栏图标是一条会消耗、会「回蓝」的魔法条。
 
-支持：**Kimi Coding Plan**、**Claude Code**、**Codex**（ChatGPT 订阅）、**Devin**。
+支持：**Kimi Coding Plan**、**Claude Code**、**Codex**（ChatGPT 订阅）、**Devin**、**DeepSeek**。
 
 ![ManaBar：Icons + % 菜单栏与 Popover 面板](https://i.roshanca.com/img/upic/25pSKB.png)
 
@@ -24,6 +24,7 @@ macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用�
 - **Claude Code**：5h / weekly 窗口、按模型细分的 weekly 限额（如 Sonnet weekly），以及 extra usage 本月已用 / 上限。
 - **Codex**：flex credits 余额，以及**可消费的 rate-limit reset 券**：展开行内列表查看每张券的到期时间（严重度圆点：红 <48h / 橙 <7d），可直接在面板里用掉最早一张 —— 内联确认、幂等请求、数量原地刷新。
 - **Devin**：daily / weekly 窗口与 extra usage（透支）余额。
+- **DeepSeek**：钱包余额总额，附 topped-up / granted 明细；低于低余额阈值变橙，余额耗尽或账户不可用时变红；仅在 Popover 显示，不进菜单栏。
 - 顶栏显示上次更新时间，底栏为 Refresh / Settings / Quit；打开面板即触发刷新。刷新失败保留上次数据并标记橙色 stale，面板绝不清空。
 
 ### 凭证与行为
@@ -59,10 +60,11 @@ macOS 26 使用 `ManaBar/AppIcon.icon`（Icon Composer 格式），由系统负�
 | Claude Code | macOS Keychain `Claude Code-credentials`（首次读取会弹系统授权框，属正常） |
 | Codex | `~/.codex/auth.json`（需 ChatGPT 登录方式，纯 API key 无用量数据） |
 | Devin | 自动发现 `~/.local/share/devin/credentials.toml` / Devin Desktop 状态库；设置页只读显示命中的来源 |
+| DeepSeek | 在设置页粘贴 API key → 存入 Keychain |
 
 ## 设置
 
-启用服务商及各家的菜单栏指标（短周期 / weekly / 双层）、菜单栏样式与魔法条显示哪家、刷新间隔（手动 / 1 / 5 / 15 / 30 / 60 分钟 + Refresh 按钮）、剩余/已用切换、登录启动、"Out of mana" 提醒、Kimi 网页会话 token、Devin 凭证来源显示。
+启用服务商及各家的菜单栏指标（短周期 / weekly / 双层）、菜单栏样式与魔法条显示哪家、刷新间隔（手动 / 1 / 5 / 15 / 30 / 60 分钟 + Refresh 按钮）、剩余/已用切换、登录启动、"Out of mana" 提醒、Kimi 网页会话 token、DeepSeek API key 与低余额阈值、Devin 凭证来源显示。
 
 ## 署名
 

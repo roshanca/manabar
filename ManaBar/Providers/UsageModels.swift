@@ -5,6 +5,7 @@ enum ProviderID: String, CaseIterable, Codable, Sendable, Identifiable {
     case claudeCode
     case codex
     case devin
+    case deepseek
 
     var id: String { rawValue }
 
@@ -14,6 +15,7 @@ enum ProviderID: String, CaseIterable, Codable, Sendable, Identifiable {
         case .claudeCode: "Claude Code"
         case .codex: "Codex"
         case .devin: "Devin"
+        case .deepseek: "DeepSeek"
         }
     }
 
@@ -23,8 +25,13 @@ enum ProviderID: String, CaseIterable, Codable, Sendable, Identifiable {
         case .claudeCode: "ProviderClaude"
         case .codex: "ProviderCodex"
         case .devin: "ProviderDevin"
+        case .deepseek: "ProviderDeepSeek"
         }
     }
+
+    /// DeepSeek only reports a wallet balance — nothing quota-like to draw
+    /// in the menu bar, so it stays popover-only.
+    var showsInMenuBar: Bool { self != .deepseek }
 }
 
 /// Which quota window a metric represents; used for menu-bar metric selection.
@@ -92,6 +99,17 @@ struct ExtraInfo: Sendable, Identifiable {
     let value: String
 }
 
+/// One currency's wallet balance (DeepSeek `balance_infos` entry): the
+/// total plus its topped-up and plan-granted components.
+struct WalletBalance: Sendable, Identifiable {
+    let currency: String
+    let total: Decimal
+    let granted: Decimal
+    let toppedUp: Decimal
+
+    var id: String { currency }
+}
+
 /// Banked usage-limit resets a provider lets the user spend from the panel
 /// (Codex rate-limit reset credits today). Attached to the snapshot so the
 /// popover row stays data-driven; nil when there's nothing to show.
@@ -114,4 +132,10 @@ struct ProviderSnapshot: Sendable {
     var extras: [ExtraInfo]
     let fetchedAt: Date
     var resets: ResetCredits? = nil
+    /// Per-currency wallet balances (DeepSeek). Empty for quota providers;
+    /// when non-empty the popover renders the wallet block instead of rows.
+    var balances: [WalletBalance] = []
+    /// Server-reported availability flag (DeepSeek `is_available`); nil
+    /// when the provider doesn't report one.
+    var isAvailable: Bool? = nil
 }

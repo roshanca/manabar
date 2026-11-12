@@ -1,10 +1,13 @@
 import Foundation
 import Security
 
-/// Generic SecItem wrapper for credentials ManaBar itself owns (Kimi web session).
+/// Generic SecItem wrapper for credentials ManaBar itself owns (Kimi web session,
+/// DeepSeek API key).
 enum KeychainHelper {
     static let kimiWebService = "com.roshan.manabar.kimi-web"
     static let kimiWebAccount = "session"
+    static let deepseekService = "com.roshan.manabar.deepseek"
+    static let deepseekAccount = "api-key"
 
     static func read(service: String, account: String) -> String? {
         let query: [String: Any] = [
