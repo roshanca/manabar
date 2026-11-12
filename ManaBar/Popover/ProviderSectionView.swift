@@ -19,6 +19,62 @@ struct ExtrasView: View {
     }
 }
 
+/// Wallet balances (DeepSeek): one block per currency — a large monospaced
+/// total over "Topped up" / "Granted" caption rows in the ExtrasView style.
+/// The total is red when the account reports unavailable or the balance is
+/// exhausted, orange below the configured low-balance threshold, else
+/// primary.
+private struct WalletBalancesView: View {
+    let balances: [WalletBalance]
+    let isAvailable: Bool?
+
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        ForEach(balances) { balance in
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Self.formatted(balance.total, currency: balance.currency))
+                    .font(.title2.monospacedDigit())
+                    .foregroundStyle(color(for: balance))
+                ExtrasView(extras: extras(for: balance))
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    private func extras(for balance: WalletBalance) -> [ExtraInfo] {
+        var extras = [
+            ExtraInfo(id: "\(balance.id).toppedUp", label: "Topped up",
+                      value: Self.formatted(balance.toppedUp, currency: balance.currency)),
+            ExtraInfo(id: "\(balance.id).granted", label: "Granted",
+                      value: Self.formatted(balance.granted, currency: balance.currency)),
+        ]
+        if let spent = balance.todaySpent {
+            extras.append(ExtraInfo(
+                id: "\(balance.id).today", label: "Spent today",
+                value: "≈ " + Self.formatted(spent, currency: balance.currency)))
+        }
+        return extras
+    }
+
+    private func color(for balance: WalletBalance) -> Color {
+        let total = NSDecimalNumber(decimal: balance.total).doubleValue
+        if isAvailable == false || total <= 0 { return .red }
+        if total < appState.settings.lowBalanceThreshold { return .orange }
+        return .primary
+    }
+
+    /// "¥36.64" for CNY, "$12.00" for USD, "XXX 1.00" for anything else.
+    private static func formatted(_ amount: Decimal, currency: String) -> String {
+        let value = String(format: "%.2f", NSDecimalNumber(decimal: amount).doubleValue)
+        switch currency {
+        case "CNY": return "¥\(value)"
+        case "USD": return "$\(value)"
+        default: return "\(currency) \(value)"
+        }
+    }
+}
+
 /// One provider section: header (icon, name, plan badge, stale badge), quota
 /// rows, extras. Sections are separated by dividers, not cards.
 struct ProviderSectionView: View {
@@ -45,6 +101,14 @@ struct ProviderSectionView: View {
                         .padding(.vertical, 2)
                         .background(.blue.opacity(0.15), in: .capsule)
                 }
+                if snapshot?.isAvailable == false {
+                    Text("Insufficient")
+                        .font(.caption)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.red.opacity(0.15), in: .capsule)
+                        .foregroundStyle(.red)
+                }
                 Spacer()
                 if stale && snapshot != nil {
                     Label("stale", systemImage: "exclamationmark.triangle")
@@ -54,8 +118,13 @@ struct ProviderSectionView: View {
             }
 
             if let snapshot {
-                ForEach(snapshot.metrics) { metric in
-                    QuotaRowView(metric: metric, showRemaining: appState.settings.showRemaining)
+                if snapshot.balances.isEmpty {
+                    ForEach(snapshot.metrics) { metric in
+                        QuotaRowView(metric: metric, showRemaining: appState.settings.showRemaining)
+                    }
+                } else {
+                    WalletBalancesView(balances: snapshot.balances,
+                                       isAvailable: snapshot.isAvailable)
                 }
                 if !snapshot.extras.isEmpty {
                     ExtrasView(extras: snapshot.extras)

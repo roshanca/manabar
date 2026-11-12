@@ -99,16 +99,28 @@ final class AppSettings {
     var outOfManaAlert: Bool {
         didSet { defaults.set(outOfManaAlert, forKey: "outOfManaAlert") }
     }
+    /// Wallet-balance warning level (DeepSeek): totals below this turn
+    /// orange in the popover. Currency-agnostic — compared against the
+    /// raw balance number.
+    var lowBalanceThreshold: Double {
+        didSet { defaults.set(lowBalanceThreshold, forKey: "lowBalanceThreshold") }
+    }
 
     private init() {
         let defaults = UserDefaults.standard
         if let raw = defaults.stringArray(forKey: "enabledProviders") {
             enabledProviders = Set(raw.compactMap(ProviderID.init(rawValue:)))
         } else {
-            enabledProviders = Set(ProviderID.allCases)
+            // Popover-only providers (DeepSeek) are opt-in for new users.
+            enabledProviders = Set(ProviderID.allCases.filter { $0 != .deepseek })
         }
-        primaryProvider = defaults.string(forKey: "primaryProvider")
-            .flatMap(ProviderID.init(rawValue:)) ?? .kimi
+        if let raw = defaults.string(forKey: "primaryProvider"),
+           let provider = ProviderID(rawValue: raw),
+           provider.showsInMenuBar {
+            primaryProvider = provider
+        } else {
+            primaryProvider = .kimi
+        }
         menuBarStyle = defaults.string(forKey: "menuBarStyle")
             .flatMap(MenuBarStyle.init(rawValue:)) ?? .manaBar
         menuBarMetric = (defaults.dictionary(forKey: "menuBarMetric") as? [String: String])?
@@ -128,6 +140,7 @@ final class AppSettings {
         showRemaining = defaults.object(forKey: "showRemaining") as? Bool ?? false
         launchAtLogin = defaults.bool(forKey: "launchAtLogin")
         outOfManaAlert = defaults.object(forKey: "outOfManaAlert") as? Bool ?? true
+        lowBalanceThreshold = defaults.object(forKey: "lowBalanceThreshold") as? Double ?? 10
     }
 
     /// Unknown or missing persisted values fall back per provider to

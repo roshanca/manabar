@@ -48,6 +48,7 @@ final class AppState {
         let enabled = settings.enabledProviders
         let providers: [any UsageProvider] = [
             KimiProvider(), ClaudeCodeProvider(), CodexProvider(), DevinProvider(),
+            DeepSeekProvider(),
         ].filter { enabled.contains($0.id) }
 
         await withTaskGroup(of: (ProviderID, ProviderSnapshot?, String?).self) { group in
@@ -123,9 +124,11 @@ final class AppState {
     /// Icon+% strip entries for the `.providers` menu-bar style — one slot
     /// per enabled provider in stable ProviderID order. `.dual` resolves to
     /// the fuller of the provider's windowed metrics; nil keeps a "--" slot
-    /// so positions never shift.
+    /// so positions never shift. Popover-only providers (no menu-bar
+    /// representation) never get a slot.
     var menuBarProviderEntries: [(provider: ProviderID, metric: QuotaMetric?)] {
         ProviderID.allCases
+            .filter(\.showsInMenuBar)
             .filter { settings.enabledProviders.contains($0) }
             .map { provider in
                 let metrics = snapshots[provider]?.metrics ?? []

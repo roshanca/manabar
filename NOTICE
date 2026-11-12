@@ -18,6 +18,9 @@ The provider card icons in Assets.xcassets come from:
   MIT License, Copyright (c) 2026 yetone
   (ProviderClaude, ProviderDevin, ProviderKimi)
 - **ai-usage-menubar** (ProviderCodex), per above.
+- **@lobehub/icons-static-svg** — https://github.com/lobehub/lobe-icons
+  MIT License, Copyright (c) 2023 LobeHub
+  (ProviderDeepSeek)
 
 Beyond that, ManaBar's UI and architecture are original. Kimi Coding Plan
 endpoints were reverse-engineered independently.

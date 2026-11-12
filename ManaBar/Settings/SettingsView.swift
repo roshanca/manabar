@@ -5,97 +5,132 @@ struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @State private var devinCredentialSource = "Detecting…"
     @State private var kimiWebToken = ""
+    @State private var deepseekAPIKey = ""
 
     private var settings: AppSettings { appState.settings }
 
     var body: some View {
-        Form {
-            Section("Providers") {
-                ForEach(ProviderID.allCases) { provider in
-                    HStack {
-                        Toggle(provider.displayName, isOn: binding(for: provider))
-                        Spacer()
-                        Picker("Menu bar", selection: displayBinding(for: provider)) {
-                            ForEach(AppSettings.MenuBarDisplay.allCases) { display in
-                                Text(display.label(for: provider)).tag(display)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(width: 140)
-                        .disabled(!settings.enabledProviders.contains(provider))
-                    }
-                }
-                Text(#""Both" draws two stacked bars: short-period quota on top, weekly quota below. With "Icons + %" it shows the fuller window."#)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Picker("Menu bar style", selection: menuBarStyleBinding) {
-                    ForEach(AppSettings.MenuBarStyle.allCases) { style in
-                        Text(style.label).tag(style)
-                    }
-                }
-                Picker("Menu bar shows", selection: primaryProviderBinding) {
+        ScrollView {
+            Form {
+                Section("Providers") {
                     ForEach(ProviderID.allCases) { provider in
-                        Text(provider.displayName).tag(provider)
-                    }
-                }
-                .disabled(settings.menuBarStyle == .providers)
-            }
-
-            Section("General") {
-                Picker("Refresh", selection: refreshIntervalBinding) {
-                    ForEach(AppSettings.RefreshInterval.allCases) { interval in
-                        Text(interval.label).tag(interval)
-                    }
-                }
-                Toggle("Show remaining instead of used", isOn: showRemainingBinding)
-                Toggle("Launch at login", isOn: launchAtLoginBinding)
-                Toggle(#""Out of mana" alert when critical"#, isOn: outOfManaBinding)
-            }
-
-            Section("Kimi web session") {
-                SecureField("refresh_token", text: $kimiWebToken)
-                    .textFieldStyle(.roundedBorder)
-                HStack {
-                    Button("Save") {
-                        let trimmed = kimiWebToken.trimmingCharacters(in: .whitespacesAndNewlines)
-                        Task {
-                            if trimmed.isEmpty {
-                                await KimiWebCredentialStore.shared.clear()
-                            } else {
-                                await KimiWebCredentialStore.shared.importRefreshToken(trimmed)
+                        HStack {
+                            Toggle(provider.displayName, isOn: binding(for: provider))
+                            Spacer()
+                            if provider.showsInMenuBar {
+                                Picker("Menu bar", selection: displayBinding(for: provider)) {
+                                    ForEach(AppSettings.MenuBarDisplay.allCases) { display in
+                                        Text(display.label(for: provider)).tag(display)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.menu)
+                                .frame(width: 140)
+                                .disabled(!settings.enabledProviders.contains(provider))
                             }
-                            kimiWebToken = ""
-                            await appState.refresh()
                         }
                     }
-                    .disabled(kimiWebToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                              && KeychainHelper.read(service: KeychainHelper.kimiWebService,
-                                                     account: KeychainHelper.kimiWebAccount) == nil)
-                    if KeychainHelper.read(service: KeychainHelper.kimiWebService,
-                                           account: KeychainHelper.kimiWebAccount) != nil {
-                        Label("Token saved", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .font(.caption)
+                    Text(#""Both" draws two stacked bars: short-period quota on top, weekly quota below. With "Icons + %" it shows the fuller window."#)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Picker("Menu bar style", selection: menuBarStyleBinding) {
+                        ForEach(AppSettings.MenuBarStyle.allCases) { style in
+                            Text(style.label).tag(style)
+                        }
                     }
+                    Picker("Menu bar shows", selection: primaryProviderBinding) {
+                        ForEach(ProviderID.allCases.filter(\.showsInMenuBar)) { provider in
+                            Text(provider.displayName).tag(provider)
+                        }
+                    }
+                    .disabled(settings.menuBarStyle == .providers)
                 }
-                Text("Shows the real booster recharge balance. Copy from kimi.com: "
-                     + "DevTools → Console → localStorage.getItem('refresh_token'). "
-                     + "Valid ~90 days.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
 
-            Section("Devin") {
-                LabeledContent("Credential", value: devinCredentialSource)
-                Text("Detected automatically from the Devin Desktop sign-in "
-                     + "or devin CLI (~/.local/share/devin/credentials.toml).")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Section("General") {
+                    Picker("Refresh", selection: refreshIntervalBinding) {
+                        ForEach(AppSettings.RefreshInterval.allCases) { interval in
+                            Text(interval.label).tag(interval)
+                        }
+                    }
+                    Toggle("Show remaining instead of used", isOn: showRemainingBinding)
+                    Toggle("Launch at login", isOn: launchAtLoginBinding)
+                    Toggle(#""Out of mana" alert when critical"#, isOn: outOfManaBinding)
+                }
+
+                Section("Kimi web session") {
+                    SecureField("refresh_token", text: $kimiWebToken)
+                        .textFieldStyle(.roundedBorder)
+                    HStack {
+                        Button("Save") {
+                            let trimmed = kimiWebToken.trimmingCharacters(in: .whitespacesAndNewlines)
+                            Task {
+                                if trimmed.isEmpty {
+                                    await KimiWebCredentialStore.shared.clear()
+                                } else {
+                                    await KimiWebCredentialStore.shared.importRefreshToken(trimmed)
+                                }
+                                kimiWebToken = ""
+                                await appState.refresh()
+                            }
+                        }
+                        .disabled(kimiWebToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                  && KeychainHelper.read(service: KeychainHelper.kimiWebService,
+                                                         account: KeychainHelper.kimiWebAccount) == nil)
+                        if KeychainHelper.read(service: KeychainHelper.kimiWebService,
+                                               account: KeychainHelper.kimiWebAccount) != nil {
+                            Label("Token saved", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                        }
+                    }
+                    Text("Shows the real booster recharge balance. Copy from kimi.com: "
+                         + "DevTools → Console → localStorage.getItem('refresh_token'). "
+                         + "Valid ~90 days.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("DeepSeek") {
+                    SecureField("API key", text: $deepseekAPIKey)
+                        .textFieldStyle(.roundedBorder)
+                    HStack {
+                        Button("Save") {
+                            Task {
+                                await DeepSeekCredentialStore.shared.save(deepseekAPIKey)
+                                deepseekAPIKey = ""
+                                await appState.refresh()
+                            }
+                        }
+                        .disabled(deepseekAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                  && KeychainHelper.read(service: KeychainHelper.deepseekService,
+                                                         account: KeychainHelper.deepseekAccount) == nil)
+                        if KeychainHelper.read(service: KeychainHelper.deepseekService,
+                                               account: KeychainHelper.deepseekAccount) != nil {
+                            Label("Key saved", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                        }
+                    }
+                    TextField("Low balance warning (¥)", value: lowBalanceThresholdBinding,
+                              format: .number)
+                        .textFieldStyle(.roundedBorder)
+                    Text("Create a key at platform.deepseek.com → API keys. "
+                         + "Stored in the Keychain.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Devin") {
+                    LabeledContent("Credential", value: devinCredentialSource)
+                    Text("Detected automatically from the Devin Desktop sign-in "
+                         + "or devin CLI (~/.local/share/devin/credentials.toml).")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
+            .formStyle(.grouped)
         }
-        .formStyle(.grouped)
-        .frame(width: 460, height: 560)
+        .frame(width: 460, height: 640)
         .task {
             let source = await Task.detached {
                 (try? DevinProvider.discoverCredentials())?.sourceLabel ?? "Not detected"
@@ -166,5 +201,11 @@ struct SettingsView: View {
         Binding(
             get: { settings.outOfManaAlert },
             set: { settings.outOfManaAlert = $0 })
+    }
+
+    private var lowBalanceThresholdBinding: Binding<Double> {
+        Binding(
+            get: { settings.lowBalanceThreshold },
+            set: { settings.lowBalanceThreshold = $0 })
     }
 }
