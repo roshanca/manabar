@@ -6,7 +6,7 @@ macOS 菜单栏 AI 配额监控器 — 实时显示多家 AI 编程订阅的用�
 
 支持：**Kimi Coding Plan**、**Claude Code**、**Codex**（ChatGPT 订阅）、**Devin**、**DeepSeek**。
 
-![ManaBar：Icons + % 菜单栏与 Popover 面板](https://i.roshanca.com/img/upic/25pSKB.png)
+![ManaBar：Icons + % 菜单栏与 Popover 面板](https://i.roshanca.com/img/2026/11/715038fb-d0e3-45cf-8366-4fb851515ec0-d29808a8-34b8-478a-a803-66d443ac60cb.png)
 
 ## 特性
 
