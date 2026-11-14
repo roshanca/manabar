@@ -6,7 +6,7 @@ A macOS menu bar app that monitors usage across your AI coding subscriptions —
 
 Supports **Kimi Coding Plan**, **Claude Code**, **Codex** (ChatGPT subscription), **Devin**, and **DeepSeek**.
 
-![ManaBar: Icons + % menu bar and the popover panel](https://i.roshanca.com/img/2026/11/715038fb-d0e3-45cf-8366-4fb851515ec0-d29808a8-34b8-478a-a803-66d443ac60cb.png)
+<a href="https://i.roshanca.com/img/2026/11/SCR-20261114-jpmg.png"><img src="https://i.roshanca.com/img/2026/11/SCR-20261114-jpmg.png" alt="ManaBar: Icons + % menu bar and the popover panel" width="410"></a>
 
 ## Features
 
